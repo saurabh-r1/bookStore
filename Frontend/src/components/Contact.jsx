@@ -162,7 +162,7 @@ export default function Contact() {
           <aside className="space-y-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
               <h4 className="font-semibold mb-3">Our office</h4>
-              <p className="text-sm text-slate-600 dark:text-slate-300">BookStore Pvt Ltd</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">The Page Hub Bookstore Pvt Ltd</p>
               <p className="text-sm text-slate-600 dark:text-slate-300">Mumbai, India</p>
               <p className="text-sm text-slate-600 dark:text-slate-300">Phone: +91 98765 43210</p>
               <p className="text-sm text-slate-600 dark:text-slate-300">Email: hello@bookstore.test</p>

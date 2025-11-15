@@ -1,16 +1,16 @@
 {
-  "name": "bookstore",
+  "name": "The Page Hub",
   "version": "1.0.0",
   "description": "MERN BookStore Project Backend",
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "server": "node index.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "BookStore",
+    "The Page Hub",
     "MERN",
     "Backend",
     "Node",

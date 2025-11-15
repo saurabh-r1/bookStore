@@ -4,16 +4,17 @@ export const AuthContext = createContext();
 
 /**
  * AuthProvider
- * Keeps authUser state synced with localStorage key "Users".
- * authUser is either null or an object { _id, fullname, email }
+ * - Reads user from localStorage (long-term) OR sessionStorage (short-term).
+ * - Exposes [authUser, setAuthUser] via useAuth hook.
  */
 export default function AuthProvider({ children }) {
   const initial = (() => {
     try {
-      const raw = localStorage.getItem("Users");
+      // prefer localStorage but fallback to sessionStorage
+      const raw = localStorage.getItem("Users") || sessionStorage.getItem("Users");
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
-      console.error("Failed to parse Users from localStorage:", e);
+      console.error("Failed to parse Users from storage:", e);
       return null;
     }
   })();
