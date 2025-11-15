@@ -8,7 +8,9 @@ function Home() {
   return (
     <>
       <Navbar />
-      <Banner />
+      <div className="pt-20">
+        <Banner />
+      </div>
       <Freebook />
       <Footer />
     </>

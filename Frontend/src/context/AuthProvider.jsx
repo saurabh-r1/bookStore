@@ -1,8 +1,12 @@
-// src/context/AuthProvider.jsx
 import React, { createContext, useContext, useState } from "react";
 
 export const AuthContext = createContext();
 
+/**
+ * AuthProvider
+ * Keeps authUser state synced with localStorage key "Users".
+ * authUser is either null or an object { _id, fullname, email }
+ */
 export default function AuthProvider({ children }) {
   const initial = (() => {
     try {
