@@ -1,55 +1,121 @@
 // Backend/controller/book.controller.js
 import Book from "../model/book.model.js";
 
+/**
+ * GET /book
+ * Get all books
+ */
 export const getBook = async (req, res) => {
   try {
-    const books = await Book.find().lean();
-    return res.status(200).json(books);
-  } catch (err) {
-    console.error("getBook error:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    const books = await Book.find().sort({ createdAt: -1 });
+    res.status(200).json(books);
+  } catch (error) {
+    console.error("getBook error:", error);
+    res.status(500).json({ message: "Failed to fetch books", error: error.message });
   }
 };
 
-// Seed sample books (call once in dev)
-export const seedBooks = async (req, res) => {
+/**
+ * GET /book/:id
+ * Get a single book by id
+ */
+export const getBookById = async (req, res) => {
   try {
-    const existing = await Book.countDocuments();
-    if (existing > 0) {
-      return res.status(200).json({ message: "DB already seeded", count: existing });
+    const { id } = req.params;
+    const book = await Book.findById(id);
+
+    if (!book) {
+      return res.status(404).json({ message: "Book not found" });
     }
 
-    const sample = [
-      {
-        name: "Intro to JavaScript",
-        title: "Basics of JS — variables, functions, DOM.",
-        price: 0,
-        category: "Free",
-        image: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=60&auto=format&fit=crop",
-        description: "A short practical guide to JavaScript fundamentals.",
-      },
-      {
-        name: "Advanced React Patterns",
-        title: "Hooks, context, performance.",
-        price: 499,
-        category: "Premium",
-        image: "https://images.unsplash.com/photo-1526378723456-5e0f2c97f2c6?w=800&q=60&auto=format&fit=crop",
-        description: "Deep dive into advanced React patterns used by production apps.",
-      },
-      {
-        name: "HTML & CSS Mastery",
-        title: "Responsive layouts, modern CSS.",
-        price: 0,
-        category: "Free",
-        image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=60&auto=format&fit=crop",
-        description: "Practical approaches to layout and styling.",
-      },
-    ];
+    res.status(200).json(book);
+  } catch (error) {
+    console.error("getBookById error:", error);
+    res.status(500).json({ message: "Failed to fetch book", error: error.message });
+  }
+};
 
-    const created = await Book.insertMany(sample);
-    return res.status(201).json({ message: "Seeded sample books", inserted: created.length });
-  } catch (err) {
-    console.error("seedBooks error:", err);
-    return res.status(500).json({ message: "Internal server error" });
+/**
+ * POST /book
+ * Create a new book
+ * Expected body: { name, price, category, image, title }
+ */
+export const createBook = async (req, res) => {
+  try {
+    const { name, price, category, image, title } = req.body;
+
+    if (!name || price == null || !category || !title) {
+      return res.status(400).json({ message: "name, price, category and title are required" });
+    }
+
+    const book = new Book({
+      name,
+      price,
+      category,
+      image,
+      title,
+    });
+
+    const saved = await book.save();
+    res.status(201).json({
+      message: "Book created successfully",
+      book: saved,
+    });
+  } catch (error) {
+    console.error("createBook error:", error);
+    res.status(500).json({ message: "Failed to create book", error: error.message });
+  }
+};
+
+/**
+ * PUT /book/:id
+ * Update an existing book
+ */
+export const updateBook = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, price, category, image, title } = req.body;
+
+    const updated = await Book.findByIdAndUpdate(
+      id,
+      { name, price, category, image, title },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    res.status(200).json({
+      message: "Book updated successfully",
+      book: updated,
+    });
+  } catch (error) {
+    console.error("updateBook error:", error);
+    res.status(500).json({ message: "Failed to update book", error: error.message });
+  }
+};
+
+/**
+ * DELETE /book/:id
+ * Delete a book
+ */
+export const deleteBook = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Book.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Book not found" });
+    }
+
+    res.status(200).json({
+      message: "Book deleted successfully",
+      book: deleted,
+    });
+  } catch (error) {
+    console.error("deleteBook error:", error);
+    res.status(500).json({ message: "Failed to delete book", error: error.message });
   }
 };

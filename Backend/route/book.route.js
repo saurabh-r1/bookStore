@@ -1,11 +1,28 @@
 // Backend/route/book.route.js
 import express from "express";
-import { getBook, seedBooks } from "../controller/book.controller.js";
+import {
+  getBook,
+  getBookById,
+  createBook,
+  updateBook,
+  deleteBook,
+} from "../controller/book.controller.js";
 
 const router = express.Router();
 
+// GET all books
 router.get("/", getBook);
-// dev-only endpoint to populate DB quickly
-router.post("/seed", seedBooks);
+
+// GET single book by id
+router.get("/:id", getBookById);
+
+// CREATE book
+router.post("/", createBook);
+
+// UPDATE book
+router.put("/:id", updateBook);
+
+// DELETE book
+router.delete("/:id", deleteBook);
 
 export default router;

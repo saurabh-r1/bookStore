@@ -1,10 +1,14 @@
 // Frontend/src/components/Cards.jsx
 import React from "react";
+import { useAuth } from "../context/AuthProvider";
 
 const placeholder =
   "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=60&auto=format&fit=crop";
 
-function Cards({ item }) {
+function Cards({ item, onEdit, onDelete }) {
+  const [authUser] = useAuth();
+  const isAdmin = authUser?.role === "admin";
+
   const imgSrc = item?.image || placeholder;
   const price = item?.price ?? "0";
   const name = item?.name ?? "Untitled";
@@ -13,10 +17,8 @@ function Cards({ item }) {
 
   return (
     <div className="mt-4 my-3 p-3">
-      <div className="card bg-base-100 shadow-xl hover:scale-105 duration-200 dark:bg-slate-900 dark:text-white dark:border rounded-xl">
-
-        {/* -------- Fixed Height Image -------- */}
-        <figure className="h-48 w-full overflow-hidden rounded-t-xl">
+      <div className="card w-full bg-base-100 shadow-xl hover:scale-105 duration-200 dark:bg-slate-900 dark:text-white dark:border flex flex-col">
+        <figure className="h-48 overflow-hidden">
           <img
             src={imgSrc}
             alt={name}
@@ -28,28 +30,44 @@ function Cards({ item }) {
           />
         </figure>
 
-        {/* -------- Equal Height Body -------- */}
-        <div className="card-body flex flex-col justify-between min-h-[210px]">
-
-          {/* Title + Badge */}
+        <div className="card-body flex flex-col justify-between">
           <div>
-            <h2 className="card-title text-lg font-semibold">
+            <h2 className="card-title text-base md:text-lg">
               {name}
               <div className="badge badge-secondary ml-2">{category}</div>
             </h2>
-
-            <p className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 mt-1">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
               {title}
             </p>
           </div>
 
-          {/* Price + CTA */}
           <div className="card-actions justify-between items-center mt-3">
-            <div className="badge badge-outline px-3 py-1">${price}</div>
+            <div className="badge badge-outline">${price}</div>
 
-            <button className="cursor-pointer px-3 py-1 rounded-full border-[2px] hover:bg-pink-500 hover:text-white duration-200">
-              Buy Now
-            </button>
+            <div className="flex gap-2">
+              <button className="cursor-pointer px-3 py-1 rounded-full border-[2px] hover:bg-pink-500 hover:text-white duration-200 text-xs md:text-sm">
+                Buy Now
+              </button>
+
+              {isAdmin && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onEdit && onEdit(item)}
+                    className="px-3 py-1 rounded-full border border-indigo-500 text-indigo-600 text-xs hover:bg-indigo-50 dark:hover:bg-slate-800"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete && onDelete(item)}
+                    className="px-3 py-1 rounded-full border border-red-500 text-red-500 text-xs hover:bg-red-50 dark:hover:bg-slate-800"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

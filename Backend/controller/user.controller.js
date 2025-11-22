@@ -1,12 +1,13 @@
 // Backend/controller/user.controller.js
-import User from "../model/user.model.js";
 import bcryptjs from "bcryptjs";
+import User from "../model/user.model.js";
 
-export const signup = async (req, res, next) => {
+export const signup = async (req, res) => {
   try {
-    const { fullname, email, password } = req.body;
+    const { fullname, email, password } = req.body; // ❗ no role from client
+
     if (!fullname || !email || !password) {
-      return res.status(400).json({ message: "fullname, email and password are required" });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const existing = await User.findOne({ email });
@@ -15,33 +16,41 @@ export const signup = async (req, res, next) => {
     }
 
     const hashPassword = await bcryptjs.hash(password, 10);
+
     const createdUser = new User({
       fullname,
       email,
       password: hashPassword,
+      role: "user", // 👈 force normal user on signup
     });
 
     await createdUser.save();
 
-    const userSafe = { _id: createdUser._id, fullname: createdUser.fullname, email: createdUser.email };
-    return res.status(201).json({ message: "User created successfully", user: userSafe });
+    res.status(201).json({
+      message: "User created successfully",
+      user: {
+        _id: createdUser._id,
+        fullname: createdUser.fullname,
+        email: createdUser.email,
+        role: createdUser.role,
+      },
+    });
   } catch (error) {
-    console.error("signup error:", error && error.stack ? error.stack : error);
-    // if it's a mongoose duplicate key error (just in case)
-    if (error?.code === 11000) {
-      return res.status(400).json({ message: "Email already registered (duplicate key)" });
-    }
-    return next(error);
+    console.error("Signup error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-export const login = async (req, res, next) => {
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "Email and password required" });
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
     const user = await User.findOne({ email });
-    // safe check: user might be null
+
     if (!user) {
       return res.status(400).json({ message: "Invalid username or password" });
     }
@@ -51,10 +60,17 @@ export const login = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid username or password" });
     }
 
-    const userSafe = { _id: user._id, fullname: user.fullname, email: user.email };
-    return res.status(200).json({ message: "Login successful", user: userSafe });
+    res.status(200).json({
+      message: "Login successful",
+      user: {
+        _id: user._id,
+        fullname: user.fullname,
+        email: user.email,
+        role: user.role, // 👈 important for frontend
+      },
+    });
   } catch (error) {
-    console.error("login error:", error && error.stack ? error.stack : error);
-    return next(error);
+    console.error("Login error:", error.message);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
