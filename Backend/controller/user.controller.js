@@ -1,10 +1,23 @@
-// Backend/controller/user.controller.js
-import bcryptjs from "bcryptjs";
 import User from "../model/user.model.js";
+import bcryptjs from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+// helper: create token
+const createToken = (user) => {
+  return jwt.sign(
+    {
+      _id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+};
 
 export const signup = async (req, res) => {
   try {
-    const { fullname, email, password } = req.body; // ❗ no role from client
+    const { fullname, email, password } = req.body;
 
     if (!fullname || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -21,10 +34,12 @@ export const signup = async (req, res) => {
       fullname,
       email,
       password: hashPassword,
-      role: "user", // 👈 force normal user on signup
+      // role: "user" by default
     });
 
     await createdUser.save();
+
+    const token = createToken(createdUser);
 
     res.status(201).json({
       message: "User created successfully",
@@ -34,6 +49,7 @@ export const signup = async (req, res) => {
         email: createdUser.email,
         role: createdUser.role,
       },
+      token,
     });
   } catch (error) {
     console.error("Signup error:", error.message);
@@ -45,20 +61,21 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
     const user = await User.findOne({ email });
-
     if (!user) {
-      return res.status(400).json({ message: "Invalid username or password" });
+      return res
+        .status(400)
+        .json({ message: "Invalid email or password" });
     }
 
     const isMatch = await bcryptjs.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid username or password" });
+      return res
+        .status(400)
+        .json({ message: "Invalid email or password" });
     }
+
+    const token = createToken(user);
 
     res.status(200).json({
       message: "Login successful",
@@ -66,8 +83,9 @@ export const login = async (req, res) => {
         _id: user._id,
         fullname: user.fullname,
         email: user.email,
-        role: user.role, // 👈 important for frontend
+        role: user.role,
       },
+      token,
     });
   } catch (error) {
     console.error("Login error:", error.message);

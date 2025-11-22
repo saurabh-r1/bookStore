@@ -1,31 +1,29 @@
-// Frontend/src/components/Login.jsx
 import React, { useEffect, useRef, useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axiosInstance";
+
 
 export default function Login() {
-  // form state
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // remember me state: read previous preference (if any)
-  const [remember, setRemember] = useState(localStorage.getItem("remember") === "true");
+  const [remember, setRemember] = useState(
+    localStorage.getItem("remember") === "true"
+  );
 
   const [, setAuthUser] = useAuth();
   const navigate = useNavigate();
   const emailRef = useRef(null);
 
-  // on mount: focus input and prefill email if remembered
   useEffect(() => {
     const dialog = document.getElementById("login_modal");
     if (!dialog) return;
     const onShow = () => setTimeout(() => emailRef.current?.focus(), 60);
     dialog.addEventListener("show", onShow);
 
-    // preload remembered email if available
     const remEmail = localStorage.getItem("rememberEmail");
     if (remEmail) {
       setForm((p) => ({ ...p, email: remEmail }));
@@ -34,17 +32,16 @@ export default function Login() {
     return () => dialog.removeEventListener("show", onShow);
   }, []);
 
-  // handle input changes
   const handleChange = (e) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
     setErrors((p) => ({ ...p, [e.target.name]: "" }));
   };
 
-  // validation
   const validate = () => {
     const e = {};
     if (!form.email) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      e.email = "Enter a valid email";
     if (!form.password) e.password = "Password is required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -61,34 +58,34 @@ export default function Login() {
     dialog?.showModal();
   };
 
-  // Login submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setLoading(true);
     try {
-      const res = await axios.post("http://localhost:4001/user/login", form);
-      const user = res.data.user;
+      const res = await api.post("/user/login", form);
+      const { user, token, message } = res.data;
 
-      // set auth context
       setAuthUser(user);
 
-      // persist according to 'remember'
       if (remember) {
         localStorage.setItem("Users", JSON.stringify(user));
+        localStorage.setItem("token", token);
         localStorage.setItem("remember", "true");
         localStorage.setItem("rememberEmail", user.email || form.email);
-        // ensure sessionStorage does not keep stale user
         sessionStorage.removeItem("Users");
+        sessionStorage.removeItem("token");
       } else {
         sessionStorage.setItem("Users", JSON.stringify(user));
+        sessionStorage.setItem("token", token);
         localStorage.removeItem("Users");
+        localStorage.removeItem("token");
         localStorage.removeItem("remember");
         localStorage.removeItem("rememberEmail");
       }
 
-      toast.success(res.data.message || "Logged in");
+      toast.success(message || "Logged in");
       closeModal();
       navigate("/course");
     } catch (err) {
@@ -106,15 +103,19 @@ export default function Login() {
         role="dialog"
         aria-labelledby="login-modal-title"
       >
-        {/* header stripe */}
         <div className="w-full py-4 px-6 bg-gradient-to-r from-indigo-500 via-pink-500 to-pink-400">
           <div className="flex items-start justify-between">
             <div>
-              <h3 id="login-modal-title" className="text-white text-lg font-semibold">Welcome back</h3>
-              <p className="text-indigo-100 text-sm mt-1">Sign in to continue</p>
+              <h3
+                id="login-modal-title"
+                className="text-white text-lg font-semibold"
+              >
+                Welcome back
+              </h3>
+              <p className="text-indigo-100 text-sm mt-1">
+                Sign in to continue
+              </p>
             </div>
-
-            {/* X Close */}
             <button
               type="button"
               onClick={closeModal}
@@ -129,7 +130,9 @@ export default function Login() {
         <div className="p-6 bg-white dark:bg-slate-800">
           <div className="space-y-4">
             <label className="block">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Email</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                Email
+              </span>
               <input
                 ref={emailRef}
                 name="email"
@@ -140,13 +143,19 @@ export default function Login() {
                 className="mt-2 input input-bordered w-full rounded-lg h-11 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 focus:ring-4 focus:ring-indigo-200"
                 aria-invalid={!!errors.email}
               />
-              {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+              )}
             </label>
 
             <label className="block">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Password</span>
-                <small className="text-xs text-slate-400">min 6 characters</small>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Password
+                </span>
+                <small className="text-xs text-slate-400">
+                  min 6 characters
+                </small>
               </div>
 
               <PasswordInput
@@ -157,27 +166,31 @@ export default function Login() {
               />
             </label>
 
-            {/* Remember + Forgot */}
             <div className="flex items-center justify-between text-sm mt-2">
-
-              {/* REMEMBER ME */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => {
-                    setRemember(e.target.checked);
-                    // save preference immediately so next time it persists
-                    if (e.target.checked) localStorage.setItem("remember", "true");
+                    const checked = e.target.checked;
+                    setRemember(checked);
+                    if (checked) localStorage.setItem("remember", "true");
                     else localStorage.removeItem("remember");
                   }}
                   className="checkbox checkbox-sm border-slate-400 dark:border-slate-600"
                 />
-                <span className="text-slate-600 dark:text-slate-300">Remember me</span>
+                <span className="text-slate-600 dark:text-slate-300">
+                  Remember me
+                </span>
               </label>
 
-              {/* FORGOT */}
-              <button type="button" onClick={() => toast("Password reset not configured")} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
+              <button
+                type="button"
+                onClick={() =>
+                  toast("Password reset is not configured yet.")
+                }
+                className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
                 Forgot?
               </button>
             </div>
@@ -193,7 +206,11 @@ export default function Login() {
 
           <div className="mt-4 text-center text-sm text-slate-600 dark:text-slate-300">
             Don't have an account?{" "}
-            <button onClick={openSignup} type="button" className="text-pink-500 font-medium hover:underline">
+            <button
+              onClick={openSignup}
+              type="button"
+              className="text-pink-500 font-medium hover:underline"
+            >
               Create one
             </button>
           </div>
@@ -203,7 +220,6 @@ export default function Login() {
   );
 }
 
-/* PasswordInput component */
 function PasswordInput({ name, value, onChange, error }) {
   const [show, setShow] = useState(false);
   return (

@@ -1,21 +1,26 @@
-// Frontend/src/context/AuthProvider.jsx
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 export const AuthContext = createContext();
 
+/**
+ * AuthProvider
+ * Reads auth from localStorage or sessionStorage "Users".
+ */
 export default function AuthProvider({ children }) {
-  const [authUser, setAuthUser] = useState(null);
-
-  // Load user from storage on first render
-  useEffect(() => {
-    const storedUser =
-      JSON.parse(localStorage.getItem("Users")) ||
-      JSON.parse(sessionStorage.getItem("Users"));
-
-    if (storedUser) {
-      setAuthUser(storedUser);
+  const initial = (() => {
+    try {
+      const rawLocal = localStorage.getItem("Users");
+      const rawSession = sessionStorage.getItem("Users");
+      if (rawLocal) return JSON.parse(rawLocal);
+      if (rawSession) return JSON.parse(rawSession);
+      return null;
+    } catch (e) {
+      console.error("Failed to parse Users from storage:", e);
+      return null;
     }
-  }, []);
+  })();
+
+  const [authUser, setAuthUser] = useState(initial);
 
   return (
     <AuthContext.Provider value={[authUser, setAuthUser]}>

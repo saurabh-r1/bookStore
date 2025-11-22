@@ -1,8 +1,8 @@
-// Backend/index.js
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 
 import bookRoute from "./route/book.route.js";
 import userRoute from "./route/user.route.js";
@@ -11,54 +11,40 @@ dotenv.config();
 
 const app = express();
 
-// Middlewares
-app.use(cors());
-app.use(express.json());
-
-// Simple request logger
+// basic logger (optional)
 app.use((req, res, next) => {
-  console.log(new Date().toISOString(), req.method, req.url);
+  const now = new Date().toISOString();
+  console.log(`${now} ${req.method} ${req.url}`);
   next();
 });
 
-const PORT = process.env.PORT || 4001;
-const URI = process.env.MongoDBURI;
+// CORS
+app.use(
+  cors({
+    origin: "http://localhost:5173", // your Vite frontend
+    credentials: true,
+  })
+);
 
-// Connect to MongoDB
-async function connectDB() {
-  try {
-    await mongoose.connect(URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("Connected to mongoDB");
-  } catch (error) {
-    console.error("MongoDB connection error:", error.message);
-    process.exit(1);
-  }
-}
-connectDB();
+app.use(express.json());
+app.use(cookieParser());
 
-// Routes
-app.get("/", (req, res) => {
-  res.send("BookStore backend is running ✅");
-});
-
+// routes
 app.use("/book", bookRoute);
 app.use("/user", userRoute);
 
-// 404 handler
-app.use((req, res, next) => {
-  res.status(404).json({ message: "Route not found" });
-});
+// DB connect
+const PORT = process.env.PORT || 4001;
+const URI = process.env.MongoDBURI;
 
-// Global error handler (fallback)
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ message: "Internal server error" });
-});
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
-});
+mongoose
+  .connect(URI)
+  .then(() => {
+    console.log("Connected to MongoDB");
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Mongo connection error:", err);
+  });

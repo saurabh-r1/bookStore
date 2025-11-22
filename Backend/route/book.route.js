@@ -1,28 +1,20 @@
-// Backend/route/book.route.js
 import express from "express";
 import {
-  getBook,
-  getBookById,
+  getBooks,
   createBook,
   updateBook,
   deleteBook,
 } from "../controller/book.controller.js";
+import { requireAuth, requireAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// GET all books
-router.get("/", getBook);
+// PUBLIC
+router.get("/", getBooks);
 
-// GET single book by id
-router.get("/:id", getBookById);
-
-// CREATE book
-router.post("/", createBook);
-
-// UPDATE book
-router.put("/:id", updateBook);
-
-// DELETE book
-router.delete("/:id", deleteBook);
+// ADMIN ONLY
+router.post("/", requireAuth, requireAdmin, createBook);
+router.put("/:id", requireAuth, requireAdmin, updateBook);
+router.delete("/:id", requireAuth, requireAdmin, deleteBook);
 
 export default router;

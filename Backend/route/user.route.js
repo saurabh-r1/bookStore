@@ -1,4 +1,3 @@
-// Backend/route/user.route.js
 import express from "express";
 import { signup, login } from "../controller/user.controller.js";
 

@@ -1,121 +1,70 @@
-// Backend/controller/book.controller.js
 import Book from "../model/book.model.js";
 
-/**
- * GET /book
- * Get all books
- */
-export const getBook = async (req, res) => {
+// GET all books (public)
+export const getBooks = async (req, res) => {
   try {
     const books = await Book.find().sort({ createdAt: -1 });
     res.status(200).json(books);
   } catch (error) {
-    console.error("getBook error:", error);
-    res.status(500).json({ message: "Failed to fetch books", error: error.message });
+    console.error("Error fetching books:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-/**
- * GET /book/:id
- * Get a single book by id
- */
-export const getBookById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const book = await Book.findById(id);
-
-    if (!book) {
-      return res.status(404).json({ message: "Book not found" });
-    }
-
-    res.status(200).json(book);
-  } catch (error) {
-    console.error("getBookById error:", error);
-    res.status(500).json({ message: "Failed to fetch book", error: error.message });
-  }
-};
-
-/**
- * POST /book
- * Create a new book
- * Expected body: { name, price, category, image, title }
- */
+// POST create book (admin only)
 export const createBook = async (req, res) => {
   try {
-    const { name, price, category, image, title } = req.body;
+    const { name, price, category, image, title, description } = req.body;
 
-    if (!name || price == null || !category || !title) {
-      return res.status(400).json({ message: "name, price, category and title are required" });
+    if (!name) {
+      return res.status(400).json({ message: "Name is required" });
     }
 
-    const book = new Book({
+    const newBook = new Book({
       name,
       price,
       category,
       image,
       title,
+      description,
     });
 
-    const saved = await book.save();
-    res.status(201).json({
-      message: "Book created successfully",
-      book: saved,
-    });
+    await newBook.save();
+    res.status(201).json({ message: "Book created", book: newBook });
   } catch (error) {
-    console.error("createBook error:", error);
-    res.status(500).json({ message: "Failed to create book", error: error.message });
+    console.error("Create book error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-/**
- * PUT /book/:id
- * Update an existing book
- */
+// PUT update book (admin only)
 export const updateBook = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, price, category, image, title } = req.body;
-
-    const updated = await Book.findByIdAndUpdate(
-      id,
-      { name, price, category, image, title },
-      { new: true, runValidators: true }
-    );
-
+    const updated = await Book.findByIdAndUpdate(id, req.body, {
+      new: true,
+    });
     if (!updated) {
       return res.status(404).json({ message: "Book not found" });
     }
-
-    res.status(200).json({
-      message: "Book updated successfully",
-      book: updated,
-    });
+    res.status(200).json({ message: "Book updated", book: updated });
   } catch (error) {
-    console.error("updateBook error:", error);
-    res.status(500).json({ message: "Failed to update book", error: error.message });
+    console.error("Update book error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-/**
- * DELETE /book/:id
- * Delete a book
- */
+// DELETE book (admin only)
 export const deleteBook = async (req, res) => {
   try {
     const { id } = req.params;
-
     const deleted = await Book.findByIdAndDelete(id);
-
     if (!deleted) {
       return res.status(404).json({ message: "Book not found" });
     }
-
-    res.status(200).json({
-      message: "Book deleted successfully",
-      book: deleted,
-    });
+    res.status(200).json({ message: "Book deleted" });
   } catch (error) {
-    console.error("deleteBook error:", error);
-    res.status(500).json({ message: "Failed to delete book", error: error.message });
+    console.error("Delete book error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
