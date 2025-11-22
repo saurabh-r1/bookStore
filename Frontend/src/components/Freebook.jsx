@@ -1,7 +1,7 @@
 // Frontend/src/components/Freebook.jsx
 import React, { useEffect, useState } from "react";
 import Slider from "react-slick";
-import axios from "axios";
+import api from "../api/axiosInstance";
 import Cards from "./Cards";
 
 import "slick-carousel/slick/slick.css";
@@ -72,7 +72,7 @@ export default function Freebook() {
     let mounted = true;
     const getBook = async () => {
       try {
-        const res = await axios.get("http://localhost:4001/book", { timeout: 3000 });
+        const res = await api.get("/book", { timeout: 3000 });
         if (!mounted) return;
         if (Array.isArray(res.data) && res.data.length > 0) {
           // filter free category, fallback to all if none
@@ -82,7 +82,10 @@ export default function Freebook() {
           setBook(sampleBooks);
         }
       } catch (error) {
-        console.warn("Could not load books from backend — using sample books.", error?.message);
+        console.warn(
+          "Could not load books from backend — using sample books.",
+          error?.message
+        );
         if (mounted) setBook(sampleBooks);
       }
     };
@@ -99,7 +102,14 @@ export default function Freebook() {
     slidesToShow: Math.min(3, book.length || 3),
     slidesToScroll: Math.min(3, book.length || 3),
     responsive: [
-      { breakpoint: 1024, settings: { slidesToShow: Math.min(3, book.length || 3), slidesToScroll: 1, dots: true } },
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: Math.min(3, book.length || 3),
+          slidesToScroll: 1,
+          dots: true,
+        },
+      },
       { breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 1 } },
       { breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } },
     ],
@@ -114,7 +124,9 @@ export default function Freebook() {
             Free Offered Courses
           </h2>
           <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-xl mx-auto">
-            Explore our collection of free learning materials designed to help you build strong foundations and upgrade your skills—without spending a penny.
+            Explore our collection of free learning materials designed to help
+            you build strong foundations and upgrade your skills—without
+            spending a penny.
           </p>
         </div>
 

@@ -1,9 +1,9 @@
+// Frontend/src/components/Login.jsx
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosInstance";
-
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -19,17 +19,10 @@ export default function Login() {
   const emailRef = useRef(null);
 
   useEffect(() => {
-    const dialog = document.getElementById("login_modal");
-    if (!dialog) return;
-    const onShow = () => setTimeout(() => emailRef.current?.focus(), 60);
-    dialog.addEventListener("show", onShow);
-
     const remEmail = localStorage.getItem("rememberEmail");
     if (remEmail) {
       setForm((p) => ({ ...p, email: remEmail }));
     }
-
-    return () => dialog.removeEventListener("show", onShow);
   }, []);
 
   const handleChange = (e) => {

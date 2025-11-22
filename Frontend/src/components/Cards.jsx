@@ -15,6 +15,16 @@ function Cards({ item, onEdit, onDelete }) {
   const title = item?.title ?? "No description available";
   const category = item?.category ?? "General";
 
+  const handleEditClick = (e) => {
+    e.stopPropagation(); // prevent parent card click (details modal)
+    onEdit && onEdit(item);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    onDelete && onDelete(item);
+  };
+
   return (
     <div className="mt-4 my-3 p-3">
       <div className="card w-full bg-base-100 shadow-xl hover:scale-105 duration-200 dark:bg-slate-900 dark:text-white dark:border flex flex-col">
@@ -45,22 +55,28 @@ function Cards({ item, onEdit, onDelete }) {
             <div className="badge badge-outline">${price}</div>
 
             <div className="flex gap-2">
-              <button className="cursor-pointer px-3 py-1 rounded-full border-[2px] hover:bg-pink-500 hover:text-white duration-200 text-xs md:text-sm">
-                Buy Now
-              </button>
+              {/* BUY button only for normal user (NOT admin) */}
+              {!isAdmin && (
+                <button
+                  className="cursor-pointer px-3 py-1 rounded-full border-[2px] hover:bg-pink-500 hover:text-white duration-200 text-xs md:text-sm"
+                >
+                  Buy Now
+                </button>
+              )}
 
+              {/* Admin controls */}
               {isAdmin && (
                 <>
                   <button
                     type="button"
-                    onClick={() => onEdit && onEdit(item)}
+                    onClick={handleEditClick}
                     className="px-3 py-1 rounded-full border border-indigo-500 text-indigo-600 text-xs hover:bg-indigo-50 dark:hover:bg-slate-800"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
-                    onClick={() => onDelete && onDelete(item)}
+                    onClick={handleDeleteClick}
                     className="px-3 py-1 rounded-full border border-red-500 text-red-500 text-xs hover:bg-red-50 dark:hover:bg-slate-800"
                   >
                     Delete

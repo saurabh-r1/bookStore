@@ -1,3 +1,4 @@
+// Frontend/src/context/AuthProvider.jsx
 import React, { createContext, useContext, useState } from "react";
 
 export const AuthContext = createContext();
@@ -7,7 +8,7 @@ export const AuthContext = createContext();
  * Reads auth from localStorage or sessionStorage "Users".
  */
 export default function AuthProvider({ children }) {
-  const initial = (() => {
+  const [authUser, setAuthUser] = useState(() => {
     try {
       const rawLocal = localStorage.getItem("Users");
       const rawSession = sessionStorage.getItem("Users");
@@ -18,9 +19,7 @@ export default function AuthProvider({ children }) {
       console.error("Failed to parse Users from storage:", e);
       return null;
     }
-  })();
-
-  const [authUser, setAuthUser] = useState(initial);
+  });
 
   return (
     <AuthContext.Provider value={[authUser, setAuthUser]}>

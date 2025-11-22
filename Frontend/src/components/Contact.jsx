@@ -2,11 +2,16 @@
 import React, { useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
-import axios from "axios";
+import api from "../api/axiosInstance";
 import toast from "react-hot-toast";
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
+  });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -19,14 +24,16 @@ export default function Contact() {
     const e = {};
     if (!form.name.trim()) e.name = "Name is required";
     if (!form.email.trim()) e.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "Enter a valid email";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      e.email = "Enter a valid email";
     if (!form.subject.trim()) e.subject = "Subject is required";
     if (!form.message.trim()) e.message = "Message is required";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const resetForm = () => setForm({ name: "", email: "", subject: "", message: "" });
+  const resetForm = () =>
+    setForm({ name: "", email: "", subject: "", message: "" });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,17 +42,26 @@ export default function Contact() {
 
     try {
       // try to post to backend (you can add /contact route later)
-      const res = await axios.post("http://localhost:4001/contact", form, { timeout: 4000 });
-      toast.success(res?.data?.message || "Message sent — we'll get back to you!");
+      const res = await api.post("/contact", form, { timeout: 4000 });
+      toast.success(
+        res?.data?.message || "Message sent — we'll get back to you!"
+      );
       resetForm();
     } catch (err) {
       // If backend is not present, fallback to saving locally so messages aren't lost
-      console.warn("Contact POST failed — saving locally as fallback.", err?.message);
+      console.warn(
+        "Contact POST failed — saving locally as fallback.",
+        err?.message
+      );
       try {
-        const stored = JSON.parse(localStorage.getItem("contact_messages") || "[]");
+        const stored = JSON.parse(
+          localStorage.getItem("contact_messages") || "[]"
+        );
         stored.unshift({ ...form, createdAt: new Date().toISOString() });
         localStorage.setItem("contact_messages", JSON.stringify(stored));
-        toast.success("Message saved locally (no backend). We'll deliver it when server is available.");
+        toast.success(
+          "Message saved locally (no backend). We'll deliver it when server is available."
+        );
         resetForm();
       } catch (e) {
         toast.error("Failed to send or save message. Check console.");
@@ -62,9 +78,12 @@ export default function Contact() {
 
       <main className="max-w-screen-2xl container mx-auto px-5 md:px-20 pt-28 pb-24 dark:text-white">
         <section className="mb-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-extrabold mb-2">Contact us</h1>
+          <h1 className="text-3xl md:text-4xl font-extrabold mb-2">
+            Contact us
+          </h1>
           <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-            Have a question, suggestion or want to collaborate? Drop us a message and we'll reply as soon as possible.
+            Have a question, suggestion or want to collaborate? Drop us a
+            message and we'll reply as soon as possible.
           </p>
         </section>
 
@@ -74,7 +93,9 @@ export default function Contact() {
             <form onSubmit={handleSubmit} noValidate>
               <div className="grid grid-cols-1 gap-4">
                 <label className="block">
-                  <span className="text-sm text-slate-700 dark:text-slate-200">Name</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    Name
+                  </span>
                   <input
                     name="name"
                     value={form.name}
@@ -84,11 +105,17 @@ export default function Contact() {
                     aria-invalid={!!errors.name}
                     required
                   />
-                  {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                  {errors.name && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.name}
+                    </p>
+                  )}
                 </label>
 
                 <label className="block">
-                  <span className="text-sm text-slate-700 dark:text-slate-200">Email</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    Email
+                  </span>
                   <input
                     name="email"
                     type="email"
@@ -99,11 +126,17 @@ export default function Contact() {
                     aria-invalid={!!errors.email}
                     required
                   />
-                  {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                  {errors.email && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.email}
+                    </p>
+                  )}
                 </label>
 
                 <label className="block">
-                  <span className="text-sm text-slate-700 dark:text-slate-200">Subject</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    Subject
+                  </span>
                   <input
                     name="subject"
                     value={form.subject}
@@ -113,11 +146,17 @@ export default function Contact() {
                     aria-invalid={!!errors.subject}
                     required
                   />
-                  {errors.subject && <p className="text-xs text-red-500 mt-1">{errors.subject}</p>}
+                  {errors.subject && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.subject}
+                    </p>
+                  )}
                 </label>
 
                 <label className="block">
-                  <span className="text-sm text-slate-700 dark:text-slate-200">Message</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-200">
+                    Message
+                  </span>
                   <textarea
                     name="message"
                     value={form.message}
@@ -127,7 +166,11 @@ export default function Contact() {
                     aria-invalid={!!errors.message}
                     required
                   />
-                  {errors.message && <p className="text-xs text-red-500 mt-1">{errors.message}</p>}
+                  {errors.message && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.message}
+                    </p>
+                  )}
                 </label>
 
                 <div className="flex items-center gap-3 mt-2">
@@ -154,7 +197,16 @@ export default function Contact() {
             </form>
 
             <div className="mt-6 text-sm text-slate-600 dark:text-slate-300">
-              <p>If you prefer, email us directly at <a className="text-indigo-600" href="mailto:hello@bookstore.test">hello@bookstore.test</a>.</p>
+              <p>
+                If you prefer, email us directly at{" "}
+                <a
+                  className="text-indigo-600"
+                  href="mailto:hello@bookstore.test"
+                >
+                  hello@bookstore.test
+                </a>
+                .
+              </p>
             </div>
           </div>
 
@@ -162,10 +214,18 @@ export default function Contact() {
           <aside className="space-y-6">
             <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow">
               <h4 className="font-semibold mb-3">Our office</h4>
-              <p className="text-sm text-slate-600 dark:text-slate-300">The Page Hub Bookstore Pvt Ltd</p>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Mumbai, India</p>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Phone: +91 98765 43210</p>
-              <p className="text-sm text-slate-600 dark:text-slate-300">Email: hello@bookstore.test</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                The Page Hub Bookstore Pvt Ltd
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Mumbai, India
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Phone: +91 98765 43210
+              </p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">
+                Email: hello@bookstore.test
+              </p>
             </div>
 
             <div className="bg-white dark:bg-slate-800 p-0 rounded-2xl overflow-hidden shadow">
@@ -181,9 +241,15 @@ export default function Contact() {
             <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow">
               <h5 className="font-semibold mb-2">Follow us</h5>
               <div className="flex items-center gap-3">
-                <a href="#" className="text-slate-500 hover:text-indigo-600">Twitter</a>
-                <a href="#" className="text-slate-500 hover:text-indigo-600">YouTube</a>
-                <a href="#" className="text-slate-500 hover:text-indigo-600">GitHub</a>
+                <a href="#" className="text-slate-500 hover:text-indigo-600">
+                  Twitter
+                </a>
+                <a href="#" className="text-slate-500 hover:text-indigo-600">
+                  YouTube
+                </a>
+                <a href="#" className="text-slate-500 hover:text-indigo-600">
+                  GitHub
+                </a>
               </div>
             </div>
           </aside>

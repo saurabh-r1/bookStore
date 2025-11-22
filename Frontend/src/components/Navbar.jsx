@@ -34,34 +34,26 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // open login modal helper
+  // open login modal helper (only login_modal now)
   const openLogin = () => {
-    const possibleIds = ["login_modal", "my_modal_3", "auth_modal"];
-    for (const id of possibleIds) {
-      const dialog = document.getElementById(id);
-      if (dialog) {
-        if (typeof dialog.showModal === "function") {
-          try {
-            dialog.showModal();
-            return;
-          } catch (err) {
-            try {
-              dialog.setAttribute("open", "true");
-              return;
-            } catch (e) {
-              console.warn("Could not open dialog with id", id, err);
-            }
-          }
-        } else if (typeof dialog.open === "function") {
-          dialog.open();
-          return;
-        } else {
-          dialog.setAttribute("open", "true");
-          return;
-        }
-      }
+    const dialog = document.getElementById("login_modal");
+    if (!dialog) {
+      console.warn(
+        'Login dialog not found. Ensure <Login /> renders <dialog id="login_modal">.'
+      );
+      return;
     }
-    console.warn('Login dialog not found. Ensure your Login component renders a <dialog id="login_modal">');
+
+    try {
+      if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute("open", "true");
+      }
+    } catch (err) {
+      console.error("Failed to open login dialog:", err);
+      dialog.setAttribute("open", "true");
+    }
   };
 
   // Broadcast search value to the app
@@ -114,7 +106,9 @@ function Navbar() {
               e.preventDefault();
               openLogin();
             }}
-            className={`${linkClass("/course")} cursor-pointer bg-transparent border-0`}
+            className={`${linkClass(
+              "/course"
+            )} cursor-pointer bg-transparent border-0`}
           >
             Course
           </button>
@@ -140,14 +134,31 @@ function Navbar() {
       <div
         className={`max-w-screen-2xl container mx-auto md:px-20 px-4 fixed top-0 left-0 right-0 z-50
         bg-white/95 dark:bg-slate-800 dark:text-white border-b border-slate-200 dark:border-slate-700
-        ${sticky ? "shadow-md transition-all duration-300 ease-in-out" : ""}`}
+        ${
+          sticky ? "shadow-md transition-all duration-300 ease-in-out" : ""
+        }`}
       >
         <div className="navbar">
           <div className="navbar-start">
             <div className="dropdown">
-              <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" />
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost lg:hidden"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4 6h16M4 12h8m-8 6h16"
+                  />
                 </svg>
               </div>
               <ul
@@ -160,7 +171,8 @@ function Navbar() {
 
             <Link to="/" className="flex flex-col leading-snug">
               <span className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
-                The <span className="text-indigo-600">Page</span> <span className="text-green-500">Hub</span>
+                The <span className="text-indigo-600">Page</span>{" "}
+                <span className="text-green-500">Hub</span>
               </span>
 
               <span className="text-[11px] tracking-[0.15em] text-slate-500 dark:text-slate-300">
@@ -185,7 +197,12 @@ function Navbar() {
                   placeholder="Search title, topic or category"
                   aria-label="Site search"
                 />
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 opacity-70">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                  className="w-4 h-4 opacity-70"
+                >
                   <path
                     fillRule="evenodd"
                     d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
@@ -201,7 +218,9 @@ function Navbar() {
                 type="checkbox"
                 className="theme-controller"
                 checked={theme === "dark"}
-                onChange={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+                onChange={() =>
+                  setTheme((t) => (t === "dark" ? "light" : "dark"))
+                }
               />
 
               {/* sun (shown when NOT checked = light mode) */}

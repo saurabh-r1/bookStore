@@ -1,3 +1,4 @@
+// Frontend/src/components/Banner.jsx
 import React from "react";
 import { useAuth } from "../context/AuthProvider";
 
@@ -5,18 +6,16 @@ export default function Banner() {
   const [authUser] = useAuth();
 
   const openLogin = () => {
-    const possibleIds = ["login_modal", "my_modal_3", "auth_modal"];
-    for (const id of possibleIds) {
-      const dialog = document.getElementById(id);
-      if (dialog) {
-        if (typeof dialog.showModal === "function") {
-          dialog.showModal();
-          return;
-        } else {
-          dialog.setAttribute("open", "true");
-          return;
-        }
+    const dialog = document.getElementById("login_modal");
+    if (!dialog) return;
+    try {
+      if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute("open", "true");
       }
+    } catch {
+      dialog.setAttribute("open", "true");
     }
   };
 
@@ -38,7 +37,6 @@ export default function Banner() {
 
       {/* Main content */}
       <div className="relative max-w-screen-2xl container mx-auto px-5 md:px-20 py-24 text-white grid md:grid-cols-2 items-center gap-10">
-        
         {/* Left Text Content */}
         <div>
           <p className="text-sm uppercase tracking-wide opacity-90 mb-2">
@@ -50,12 +48,12 @@ export default function Banner() {
           </h1>
 
           <p className="text-base md:text-lg opacity-90 max-w-lg mb-8">
-            Discover handpicked books, insightful resources, and practical learning materials 
-            crafted to help you grow, improve, and explore something new every day.
+            Discover handpicked books, insightful resources, and practical
+            learning materials crafted to help you grow, improve, and explore
+            something new every day.
           </p>
 
           <div className="flex items-center gap-4">
-
             {/* EXPLORE COURSES (login check) */}
             <a
               href="/course"
@@ -83,7 +81,6 @@ export default function Banner() {
             className="w-full h-[350px] md:h-[420px] object-cover rounded-xl shadow-2xl"
           />
         </div>
-
       </div>
     </section>
   );

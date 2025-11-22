@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+// Frontend/src/components/Signup.jsx
+import React, { useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthProvider";
 import { useNavigate } from "react-router-dom";
@@ -15,14 +16,6 @@ export default function Signup() {
   const [, setAuthUser] = useAuth();
   const navigate = useNavigate();
   const nameRef = useRef(null);
-
-  useEffect(() => {
-    const dialog = document.getElementById("signup_modal");
-    if (!dialog) return;
-    const onShow = () => setTimeout(() => nameRef.current?.focus(), 50);
-    dialog.addEventListener("show", onShow);
-    return () => dialog.removeEventListener("show", onShow);
-  }, []);
 
   const handleChange = (e) => {
     setForm((p) => ({ ...p, [e.target.name]: e.target.value }));

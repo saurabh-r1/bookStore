@@ -1,3 +1,4 @@
+// Frontend/src/api/axiosInstance.js
 import axios from "axios";
 
 const api = axios.create({
@@ -5,7 +6,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// attach token automatically
+// attach token automatically (for protected admin routes later)
 api.interceptors.request.use((config) => {
   const token =
     sessionStorage.getItem("token") || localStorage.getItem("token");
