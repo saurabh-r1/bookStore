@@ -2,6 +2,7 @@
 import express from "express";
 import {
   getBooks,
+  getBookById,
   createBook,
   updateBook,
   deleteBook,
@@ -12,6 +13,7 @@ const router = express.Router();
 
 // PUBLIC
 router.get("/", getBooks);
+router.get("/:id", getBookById);
 
 // ADMIN ONLY
 router.post("/", requireAuth, requireAdmin, createBook);

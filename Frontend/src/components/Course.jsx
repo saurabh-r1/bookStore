@@ -6,13 +6,10 @@ import { useAuth } from "../context/AuthProvider";
 import api from "../api/axiosInstance";
 
 /**
- * Courses page with:
- * - Filters, sorting, pagination
- * - Dummy data fallback if backend is not available
- * - Book details modal
- * - ROLE-BASED:
- *     - Admin: no Buy button, can Add / Edit / Delete courses
- *     - Normal user: can view and Buy/Enroll
+ * Book listing (shop page)
+ * - Admin: Add / Edit / Delete (uses backend only)
+ * - Dummy data fallback when backend is down
+ * - Clicking a book card or "Buy" → /book/:id (handled in Cards)
  */
 
 const DUMMY_BOOKS = [
@@ -22,6 +19,9 @@ const DUMMY_BOOKS = [
     title: "Basics of JS — variables, functions, DOM.",
     price: 0,
     category: "Free",
+    genre: "Programming",
+    author: "John Doe",
+    publisher: "CodePress",
     image:
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=60&auto=format&fit=crop",
     description:
@@ -33,6 +33,9 @@ const DUMMY_BOOKS = [
     title: "Hooks, context, and performance optimizations.",
     price: 499,
     category: "Premium",
+    genre: "Web Development",
+    author: "Sarah Lee",
+    publisher: "Reactify",
     image:
       "https://images.unsplash.com/photo-1526378723456-5e0f2c97f2c6?w=800&q=60&auto=format&fit=crop",
     description:
@@ -44,10 +47,12 @@ const DUMMY_BOOKS = [
     title: "Responsive layouts, modern CSS, flex & grid.",
     price: 0,
     category: "Free",
+    genre: "Design",
+    author: "Emily Clark",
+    publisher: "Layout Labs",
     image:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=60&auto=format&fit=crop",
-    description:
-      "Practical approaches to layout and styling for modern web apps.",
+    description: "Practical approaches to layout and styling for modern web apps.",
   },
   {
     id: "d4",
@@ -55,6 +60,9 @@ const DUMMY_BOOKS = [
     title: "Backend fundamentals and APIs.",
     price: 299,
     category: "Premium",
+    genre: "Backend",
+    author: "Alex Kumar",
+    publisher: "ServerSide",
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
     description: "Start building servers and REST APIs using Node.js and Express.",
@@ -65,6 +73,9 @@ const DUMMY_BOOKS = [
     title: "Syntax, data structures and mini projects.",
     price: 0,
     category: "Free",
+    genre: "Programming",
+    author: "Priya Nair",
+    publisher: "PyPress",
     image:
       "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=60&auto=format&fit=crop",
     description: "A friendly introduction to Python for total beginners.",
@@ -75,6 +86,9 @@ const DUMMY_BOOKS = [
     title: "Queries, joins and basic design.",
     price: 0,
     category: "Free",
+    genre: "Databases",
+    author: "Michael Chen",
+    publisher: "DataHouse",
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
     description: "Learn to read & write SQL for relational databases.",
@@ -93,28 +107,28 @@ export default function Course() {
 
   // UI state
   const [q, setQ] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all"); // all | Free | Premium
-  const [sort, setSort] = useState("default"); // default | price-asc | price-desc
+  const [activeCategory, setActiveCategory] = useState("all");
+  const [sort, setSort] = useState("default");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 12;
 
-  // modal: details
-  const [selected, setSelected] = useState(null);
-
-  // modal: admin create/edit form
+  // Admin form modal
   const [showForm, setShowForm] = useState(false);
-  const [editing, setEditing] = useState(null); // null = creating new
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
     name: "",
     price: "",
     category: "Free",
+    genre: "",
+    author: "",
+    publisher: "",
     image: "",
     title: "",
     description: "",
   });
   const [saving, setSaving] = useState(false);
 
-  // try load from backend; fallback to dummy after short timeout
+  // Load from backend / dummy
   useEffect(() => {
     let canceled = false;
     const load = async () => {
@@ -123,25 +137,32 @@ export default function Course() {
       try {
         const res = await api.get("/book", { timeout: 3000 });
         if (canceled) return;
+
         const data = Array.isArray(res.data) ? res.data : res.data?.data ?? [];
-        if (data.length) {
-          setBooks(data);
-          setBackendLive(true);
+        setBackendLive(true);
+        setBooks(data);
+
+        if (data.length === 0) {
+          setError("No books in catalog yet. Use 'Add Book' to create one.");
         } else {
-          setBooks(DUMMY_BOOKS);
-          setBackendLive(false);
+          setError("");
         }
       } catch (err) {
         console.warn("Backend not available — using dummy books.", err?.message);
-        setBooks(DUMMY_BOOKS);
-        setError("Showing example books (backend not connected).");
+        if (canceled) return;
         setBackendLive(false);
+        setBooks(DUMMY_BOOKS);
+        setError(
+          "Showing example books (backend not connected). Admin actions need backend running."
+        );
       } finally {
         if (!canceled) setLoading(false);
       }
     };
     load();
-    return () => (canceled = true);
+    return () => {
+      canceled = true;
+    };
   }, []);
 
   // Listen to search from Navbar
@@ -154,19 +175,25 @@ export default function Course() {
     return () => window.removeEventListener("navbar-search", handler);
   }, []);
 
-  // derived filtered + sorted
+  const isFreeBook = (b) => {
+    const price = Number(b?.price) || 0;
+    const cat = (b?.category || "").toLowerCase();
+    return price === 0 || cat === "free";
+  };
+
   const processed = useMemo(() => {
     let arr = [...books];
 
-    // if not logged in, show only Free
-    if (!authUser) {
-      arr = arr.filter((b) => (b.category || "").toLowerCase() === "free");
-    }
-
     if (activeCategory !== "all") {
-      arr = arr.filter(
-        (b) => (b.category || "").toLowerCase() === activeCategory.toLowerCase()
-      );
+      if (activeCategory === "Free") {
+        arr = arr.filter(isFreeBook);
+      } else if (activeCategory === "Premium") {
+        arr = arr.filter((b) => {
+          const price = Number(b?.price) || 0;
+          const cat = (b?.category || "").toLowerCase();
+          return price > 0 || cat === "premium";
+        });
+      }
     }
 
     if (q.trim()) {
@@ -175,7 +202,8 @@ export default function Course() {
         (b) =>
           (b.name || "").toLowerCase().includes(s) ||
           (b.title || "").toLowerCase().includes(s) ||
-          (b.category || "").toLowerCase().includes(s)
+          (b.genre || b.category || "").toLowerCase().includes(s) ||
+          (b.author || "").toLowerCase().includes(s)
       );
     }
 
@@ -185,27 +213,19 @@ export default function Course() {
       arr.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
 
     return arr;
-  }, [books, q, activeCategory, sort, authUser]);
+  }, [books, q, activeCategory, sort]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   useEffect(() => {
     if (page > totalPages) setPage(1);
-  }, [totalPages]); // reset page if filtering reduces pages
+  }, [totalPages, page]);
 
   const pageItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return processed.slice(start, start + PAGE_SIZE);
   }, [processed, page]);
 
-  // helper to open login modal for normal users
-  const openLoginModal = () => {
-    const dlg = document.getElementById("login_modal") || document.getElementById("my_modal_3");
-    if (dlg && typeof dlg.showModal === "function") dlg.showModal();
-    else if (dlg) dlg.setAttribute("open", "true");
-    else window.location.href = "/signup";
-  };
-
-  // ===== ADMIN: open form for create / edit =====
+  // ADMIN HELPERS
   const openCreateForm = () => {
     if (!backendLive) {
       alert("Backend not connected. Admin create/update works only when API is running.");
@@ -216,6 +236,9 @@ export default function Course() {
       name: "",
       price: "",
       category: "Free",
+      genre: "",
+      author: "",
+      publisher: "",
       image: "",
       title: "",
       description: "",
@@ -228,11 +251,15 @@ export default function Course() {
       alert("Backend not connected. Admin edit works only when API is running.");
       return;
     }
+    const numericPrice = Number(book.price) || 0;
     setEditing(book);
     setForm({
       name: book.name || "",
-      price: book.price ?? "",
-      category: book.category || "General",
+      price: numericPrice,
+      category: numericPrice === 0 ? "Free" : book.category || "Premium",
+      genre: book.genre || "",
+      author: book.author || "",
+      publisher: book.publisher || "",
       image: book.image || "",
       title: book.title || "",
       description: book.description || "",
@@ -278,14 +305,18 @@ export default function Course() {
       return;
     }
 
+    const numericPrice = Number(form.price) || 0;
+    const categoryToSend =
+      numericPrice === 0 ? "Free" : form.category || "Premium";
+
     setSaving(true);
     try {
       if (editing && (editing._id || editing.id)) {
-        // UPDATE
         const id = editing._id || editing.id;
         const res = await api.put(`/book/${id}`, {
           ...form,
-          price: Number(form.price) || 0,
+          price: numericPrice,
+          category: categoryToSend,
         });
         const updated = res.data.book;
         setBooks((prev) =>
@@ -294,10 +325,10 @@ export default function Course() {
           )
         );
       } else {
-        // CREATE
         const res = await api.post("/book", {
           ...form,
-          price: Number(form.price) || 0,
+          price: numericPrice,
+          category: categoryToSend,
         });
         const created = res.data.book;
         setBooks((prev) => [created, ...prev]);
@@ -320,15 +351,13 @@ export default function Course() {
         {/* Header */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold">
-              Discover courses & books
-            </h1>
+            <h1 className="text-3xl md:text-4xl font-extrabold">Browse books</h1>
             <p className="text-slate-600 dark:text-slate-300 mt-1">
               {authUser
                 ? isAdmin
-                  ? "You are logged in as Admin — manage catalog below."
-                  : "Full catalog available — explore and enroll."
-                : "Showing free resources. Log in to unlock the full catalog."}
+                  ? "You are logged in as Admin — manage your catalog below."
+                  : "Discover free and premium books to buy and read."
+                : "Discover free and premium books. Log in when you're ready to buy."}
             </p>
             {!backendLive && (
               <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
@@ -372,22 +401,13 @@ export default function Course() {
               <option value="price-desc">Price: High → Low</option>
             </select>
 
-            {!authUser && (
-              <button
-                onClick={openLoginModal}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md"
-              >
-                Log in
-              </button>
-            )}
-
-            {/* ADMIN: Add course button */}
+            {/* ADMIN: Add book */}
             {isAdmin && (
               <button
                 onClick={openCreateForm}
                 className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
               >
-                + Add Course
+                + Add Book
               </button>
             )}
           </div>
@@ -414,19 +434,17 @@ export default function Course() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {pageItems.length ? (
-                pageItems.map((item) => (
-                  <div
-                    key={item._id || item.id || item.name}
-                    className="cursor-pointer"
-                    onClick={() => setSelected(item)}
-                  >
+                pageItems.map((item) => {
+                  const id = item._id || item.id || item.name;
+                  return (
                     <Cards
+                      key={id}
                       item={item}
                       onEdit={isAdmin ? openEditForm : undefined}
                       onDelete={isAdmin ? handleDelete : undefined}
                     />
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="col-span-full text-center py-12 text-slate-600 dark:text-slate-300">
                   No books found for current filter.
@@ -454,7 +472,9 @@ export default function Course() {
                   Page {page} / {totalPages}
                 </div>
                 <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() =>
+                    setPage((p) => Math.min(totalPages, p + 1))
+                  }
                   disabled={page >= totalPages}
                   className="btn btn-sm"
                 >
@@ -465,85 +485,13 @@ export default function Course() {
           </>
         )}
 
-        {/* Book Details Modal (for all users) */}
-        {selected && (
-          <dialog id="book_detail" open className="modal">
-            <div className="modal-box max-w-3xl rounded-2xl p-0 overflow-hidden bg-white text-slate-900">
-              <div className="md:flex">
-                <div className="md:w-1/2">
-                  <img
-                    src={
-                      selected.image ||
-                      "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=60&auto=format&fit=crop"
-                    }
-                    alt={selected.name}
-                    className="w-full h-full object-cover max-h-[420px]"
-                  />
-                </div>
-
-                <div className="md:w-1/2 p-6">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-bold">{selected.name}</h3>
-                      <p className="text-sm text-slate-600 mt-1">
-                        {selected.title}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-indigo-600">
-                        ${selected.price ?? 0}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {selected.category}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-slate-700">
-                    {selected.description}
-                  </p>
-
-                  <div className="mt-6 flex gap-3">
-                    {/* If normal user: buy/enroll; if admin: just info */}
-                    {!isAdmin && (
-                      <button
-                        onClick={() => {
-                          if (!authUser) {
-                            openLoginModal();
-                          } else {
-                            alert(
-                              `Enrolled/purchased '${selected.name}' (dummy action).`
-                            );
-                          }
-                        }}
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-md"
-                      >
-                        {selected.price && Number(selected.price) > 0
-                          ? `Buy - $${selected.price}`
-                          : "Enroll (Free)"}
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => setSelected(null)}
-                      className="px-4 py-2 border rounded-md border-slate-300 text-slate-700 hover:bg-slate-50"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </dialog>
-        )}
-
         {/* ADMIN: Add/Edit form modal */}
         {isAdmin && showForm && (
           <dialog id="book_form_modal" open className="modal">
             <div className="modal-box max-w-lg rounded-2xl p-6 bg-white text-slate-900">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold">
-                  {editing ? "Edit Course" : "Add New Course"}
+                  {editing ? "Edit Book" : "Add New Book"}
                 </h3>
                 <button
                   type="button"
@@ -574,7 +522,7 @@ export default function Course() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium text-slate-700">
-                      Price
+                      Price (₹)
                     </label>
                     <input
                       name="price"
@@ -584,6 +532,9 @@ export default function Course() {
                       className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
                       min="0"
                     />
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Set 0 to make this book Free.
+                    </p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-slate-700">
@@ -600,6 +551,46 @@ export default function Course() {
                       <option value="General">General</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Genre
+                    </label>
+                    <input
+                      name="genre"
+                      value={form.genre}
+                      onChange={handleFormChange}
+                      placeholder="e.g. Programming"
+                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Author
+                    </label>
+                    <input
+                      name="author"
+                      value={form.author}
+                      onChange={handleFormChange}
+                      placeholder="Writer name"
+                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700">
+                    Publisher
+                  </label>
+                  <input
+                    name="publisher"
+                    value={form.publisher}
+                    onChange={handleFormChange}
+                    placeholder="Publisher name"
+                    className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                  />
                 </div>
 
                 <div>
@@ -658,7 +649,7 @@ export default function Course() {
                       ? "Saving..."
                       : editing
                       ? "Save changes"
-                      : "Create course"}
+                      : "Create book"}
                   </button>
                 </div>
               </form>

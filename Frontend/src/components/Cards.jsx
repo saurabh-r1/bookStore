@@ -1,5 +1,6 @@
 // Frontend/src/components/Cards.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
 
 const placeholder =
@@ -8,76 +9,122 @@ const placeholder =
 function Cards({ item, onEdit, onDelete }) {
   const [authUser] = useAuth();
   const isAdmin = authUser?.role === "admin";
+  const navigate = useNavigate();
 
+  const id = item?._id || item?.id || item?.name;
   const imgSrc = item?.image || placeholder;
-  const price = item?.price ?? "0";
+  const price = Number(item?.price ?? 0);
   const name = item?.name ?? "Untitled";
   const title = item?.title ?? "No description available";
-  const category = item?.category ?? "General";
 
-  const handleEditClick = (e) => {
-    e.stopPropagation(); // prevent parent card click (details modal)
-    onEdit && onEdit(item);
+  const author = item?.author;
+  const publisher = item?.publisher;
+  const genre = item?.genre || item?.category || "General";
+
+  const isFree = price === 0;
+
+  const handleOpenDetail = () => {
+    if (!id) return;
+    navigate(`/book/${id}`, {
+      state: { book: item },
+    });
   };
 
-  const handleDeleteClick = (e) => {
+  const handleBuyClick = (e) => {
     e.stopPropagation();
-    onDelete && onDelete(item);
+    handleOpenDetail();
   };
 
   return (
-    <div className="mt-4 my-3 p-3">
-      <div className="card w-full bg-base-100 shadow-xl hover:scale-105 duration-200 dark:bg-slate-900 dark:text-white dark:border flex flex-col">
-        <figure className="h-48 overflow-hidden">
+    <div className="mt-4 my-3 p-1">
+      <div
+        className="group h-full rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col"
+        onClick={handleOpenDetail}
+      >
+        {/* IMAGE */}
+        <div className="relative h-56 w-full overflow-hidden rounded-t-2xl">
           <img
             src={imgSrc}
             alt={name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = placeholder;
             }}
           />
-        </figure>
 
-        <div className="card-body flex flex-col justify-between">
-          <div>
-            <h2 className="card-title text-base md:text-lg">
+          {/* Genre pill */}
+          <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-[11px] font-medium bg-black/70 text-white backdrop-blur-sm">
+            {genre}
+          </span>
+
+          {/* Price pill */}
+          <span className="absolute bottom-2 right-2 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-white/90 text-slate-900 dark:bg-slate-900/90 dark:text-white shadow">
+            {isFree ? "Free" : `₹${price}`}
+          </span>
+        </div>
+
+        {/* BODY */}
+        <div className="flex flex-col flex-1 px-4 py-3">
+          {/* TEXT BLOCK (fixed-ish height using min-h + line clamps) */}
+          <div className="flex-1 flex flex-col">
+            <h2 className="font-semibold text-sm md:text-base text-slate-900 dark:text-white line-clamp-2 min-h-[40px]">
               {name}
-              <div className="badge badge-secondary ml-2">{category}</div>
             </h2>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
+
+            {author && (
+              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                by <span className="font-medium">{author}</span>
+                {publisher ? ` · ${publisher}` : ""}
+              </p>
+            )}
+
+            <p className="mt-2 text-[13px] text-slate-600 dark:text-slate-300 line-clamp-2 min-h-[40px]">
               {title}
             </p>
           </div>
 
-          <div className="card-actions justify-between items-center mt-3">
-            <div className="badge badge-outline">${price}</div>
+          {/* FOOTER (actions) */}
+          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+            <div className="flex flex-col">
+              <span className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                {isFree ? "Free to read" : "Starts from"}
+              </span>
+              <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                {isFree ? "Free" : `₹${price}`}
+              </span>
+            </div>
 
-            <div className="flex gap-2">
-              {/* BUY button only for normal user (NOT admin) */}
+            <div className="flex items-center gap-2">
               {!isAdmin && (
                 <button
-                  className="cursor-pointer px-3 py-1 rounded-full border-[2px] hover:bg-pink-500 hover:text-white duration-200 text-xs md:text-sm"
+                  type="button"
+                  onClick={handleBuyClick}
+                  className="px-3 py-1.5 rounded-full text-xs md:text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
                 >
-                  Buy Now
+                  {isFree ? "Read Free" : "Buy"}
                 </button>
               )}
 
-              {/* Admin controls */}
               {isAdmin && (
                 <>
                   <button
                     type="button"
-                    onClick={handleEditClick}
-                    className="px-3 py-1 rounded-full border border-indigo-500 text-indigo-600 text-xs hover:bg-indigo-50 dark:hover:bg-slate-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit && onEdit(item);
+                    }}
+                    className="px-3 py-1.5 rounded-full border border-indigo-500 text-indigo-600 text-xs hover:bg-indigo-50 dark:hover:bg-slate-800"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
-                    onClick={handleDeleteClick}
-                    className="px-3 py-1 rounded-full border border-red-500 text-red-500 text-xs hover:bg-red-50 dark:hover:bg-slate-800"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete && onDelete(item);
+                    }}
+                    className="px-3 py-1.5 rounded-full border border-red-500 text-red-500 text-xs hover:bg-red-50 dark:hover:bg-slate-800"
                   >
                     Delete
                   </button>
