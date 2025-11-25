@@ -1,4 +1,3 @@
-// Backend/controller/book.controller.js
 import Book from "../model/book.model.js";
 
 // GET all books (public)
@@ -12,7 +11,7 @@ export const getBooks = async (req, res) => {
   }
 };
 
-// NEW: GET single book by id (public)
+// GET single book by id (public)
 export const getBookById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -22,7 +21,7 @@ export const getBookById = async (req, res) => {
     }
     res.status(200).json(book);
   } catch (error) {
-    console.error("Error fetching book:", error);
+    console.error("Error fetching book by id:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -30,7 +29,19 @@ export const getBookById = async (req, res) => {
 // POST create book (admin only)
 export const createBook = async (req, res) => {
   try {
-    const { name, price, category, image, title, description } = req.body;
+    const {
+      name,
+      price,
+      category,
+      image,
+      title,
+      description,
+      author,
+      genre,
+      publisher,
+      language,
+      pages,
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({ message: "Name is required" });
@@ -43,6 +54,11 @@ export const createBook = async (req, res) => {
       image,
       title,
       description,
+      author,
+      genre,
+      publisher,
+      language,
+      pages,
     });
 
     await newBook.save();

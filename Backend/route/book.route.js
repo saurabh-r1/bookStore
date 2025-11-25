@@ -1,4 +1,3 @@
-// Backend/route/book.route.js
 import express from "express";
 import {
   getBooks,

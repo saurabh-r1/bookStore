@@ -1,4 +1,3 @@
-// Frontend/src/components/Cards.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
@@ -13,124 +12,121 @@ function Cards({ item, onEdit, onDelete }) {
 
   const id = item?._id || item?.id || item?.name;
   const imgSrc = item?.image || placeholder;
-  const price = Number(item?.price ?? 0);
+
+  const priceNum = Number(item?.price) || 0;
+  const priceLabel = priceNum === 0 ? "Free" : `₹${priceNum.toLocaleString()}`;
+
   const name = item?.name ?? "Untitled";
-  const title = item?.title ?? "No description available";
-
-  const author = item?.author;
-  const publisher = item?.publisher;
+  const author = item?.author || "Unknown Author";
   const genre = item?.genre || item?.category || "General";
-
-  const isFree = price === 0;
+  const publisher = item?.publisher || "";
+  const subtitle = item?.title || item?.description || "";
 
   const handleOpenDetail = () => {
     if (!id) return;
-    navigate(`/book/${id}`, {
-      state: { book: item },
-    });
+    navigate(`/book/${id}`, { state: { book: item } });
   };
 
-  const handleBuyClick = (e) => {
+  const handleButtonClick = (e) => {
     e.stopPropagation();
     handleOpenDetail();
   };
 
+  const handleEditClick = (e) => {
+    e.stopPropagation();
+    onEdit && onEdit(item);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    onDelete && onDelete(item);
+  };
+
   return (
-    <div className="mt-4 my-3 p-1">
+    <div className="p-2">
       <div
-        className="group h-full rounded-2xl border border-slate-200/80 dark:border-slate-700 bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-200 cursor-pointer flex flex-col"
         onClick={handleOpenDetail}
+        className="card w-full bg-white dark:bg-slate-900 dark:text-white border rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col h-full"
       >
         {/* IMAGE */}
-        <div className="relative h-56 w-full overflow-hidden rounded-t-2xl">
+        <div className="h-56 overflow-hidden rounded-t-xl">
           <img
             src={imgSrc}
             alt={name}
-            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = placeholder;
             }}
           />
-
-          {/* Genre pill */}
-          <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-[11px] font-medium bg-black/70 text-white backdrop-blur-sm">
-            {genre}
-          </span>
-
-          {/* Price pill */}
-          <span className="absolute bottom-2 right-2 px-2.5 py-1 rounded-full text-[12px] font-semibold bg-white/90 text-slate-900 dark:bg-slate-900/90 dark:text-white shadow">
-            {isFree ? "Free" : `₹${price}`}
-          </span>
         </div>
 
-        {/* BODY */}
-        <div className="flex flex-col flex-1 px-4 py-3">
-          {/* TEXT BLOCK (fixed-ish height using min-h + line clamps) */}
-          <div className="flex-1 flex flex-col">
-            <h2 className="font-semibold text-sm md:text-base text-slate-900 dark:text-white line-clamp-2 min-h-[40px]">
+        {/* CONTENT */}
+        <div className="p-4 flex flex-col flex-1 justify-between">
+          {/* Title + author + subtitle */}
+          <div>
+            <h2 className="text-[15px] md:text-base font-semibold leading-tight line-clamp-2 min-h-[2.8rem]">
               {name}
             </h2>
 
-            {author && (
-              <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
-                by <span className="font-medium">{author}</span>
-                {publisher ? ` · ${publisher}` : ""}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+              by {author}
+            </p>
+
+            {subtitle && (
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 line-clamp-2 min-h-[2.4rem]">
+                {subtitle}
               </p>
             )}
-
-            <p className="mt-2 text-[13px] text-slate-600 dark:text-slate-300 line-clamp-2 min-h-[40px]">
-              {title}
-            </p>
           </div>
 
-          {/* FOOTER (actions) */}
-          <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-            <div className="flex flex-col">
-              <span className="text-[11px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                {isFree ? "Free to read" : "Starts from"}
+          {/* Bottom section */}
+          <div className="mt-3">
+            {/* Price + main action */}
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-bold text-indigo-600 dark:text-indigo-300">
+                {priceLabel}
               </span>
-              <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                {isFree ? "Free" : `₹${price}`}
-              </span>
-            </div>
 
-            <div className="flex items-center gap-2">
               {!isAdmin && (
                 <button
-                  type="button"
-                  onClick={handleBuyClick}
-                  className="px-3 py-1.5 rounded-full text-xs md:text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm"
+                  onClick={handleButtonClick}
+                  className="px-4 py-1.5 rounded-full bg-pink-600 text-white text-xs font-medium hover:bg-pink-700 transition"
                 >
-                  {isFree ? "Read Free" : "Buy"}
+                  {priceNum === 0 ? "View / Read" : "Buy"}
                 </button>
               )}
+            </div>
 
-              {isAdmin && (
-                <>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit && onEdit(item);
-                    }}
-                    className="px-3 py-1.5 rounded-full border border-indigo-500 text-indigo-600 text-xs hover:bg-indigo-50 dark:hover:bg-slate-800"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete && onDelete(item);
-                    }}
-                    className="px-3 py-1.5 rounded-full border border-red-500 text-red-500 text-xs hover:bg-red-50 dark:hover:bg-slate-800"
-                  >
-                    Delete
-                  </button>
-                </>
+            {/* Genre + publisher */}
+            <div className="mt-3 flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
+              <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] truncate max-w-[40%]">
+                {genre}
+              </span>
+              {publisher && (
+                <span className="truncate max-w-[55%] text-right">
+                  {publisher}
+                </span>
               )}
             </div>
+
+            {/* Admin Controls */}
+            {isAdmin && (
+              <div className="mt-3 flex gap-2 justify-end">
+                <button
+                  className="px-3 py-1 text-xs border border-indigo-500 text-indigo-600 rounded-full hover:bg-indigo-50 dark:hover:bg-slate-800"
+                  onClick={handleEditClick}
+                >
+                  Edit
+                </button>
+                <button
+                  className="px-3 py-1 text-xs border border-red-500 text-red-500 rounded-full hover:bg-red-50 dark:hover:bg-slate-800"
+                  onClick={handleDeleteClick}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthProvider";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axiosInstance";
 
 export default function Login() {
@@ -16,13 +16,26 @@ export default function Login() {
 
   const [, setAuthUser] = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const emailRef = useRef(null);
 
+  // Where to go after login:
+  // - if came from a protected page (like book detail or cart), go back there
+  // - otherwise default to /course
+  const from = location.state?.from?.pathname || "/course";
+
   useEffect(() => {
+    const dialog = document.getElementById("login_modal");
+    if (!dialog) return;
+    const onShow = () => setTimeout(() => emailRef.current?.focus(), 60);
+    dialog.addEventListener("show", onShow);
+
     const remEmail = localStorage.getItem("rememberEmail");
     if (remEmail) {
       setForm((p) => ({ ...p, email: remEmail }));
     }
+
+    return () => dialog.removeEventListener("show", onShow);
   }, []);
 
   const handleChange = (e) => {
@@ -79,8 +92,11 @@ export default function Login() {
       }
 
       toast.success(message || "Logged in");
+
       closeModal();
-      navigate("/course");
+
+      // 🔁 Redirect back to where user came from (book detail, cart, etc.)
+      navigate(from, { replace: true });
     } catch (err) {
       toast.error(err?.response?.data?.message || "Login failed");
     } finally {
@@ -108,6 +124,12 @@ export default function Login() {
               <p className="text-indigo-100 text-sm mt-1">
                 Sign in to continue
               </p>
+              {/* Optional hint when redirected from another page */}
+              {location.state?.from && (
+                <p className="text-[11px] text-indigo-100/80 mt-1">
+                  You were redirected here to continue your previous action.
+                </p>
+              )}
             </div>
             <button
               type="button"

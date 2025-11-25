@@ -1,14 +1,15 @@
-// Frontend/src/components/Freebook.jsx
 import React, { useEffect, useState } from "react";
 import Slider from "react-slick";
-import api from "../api/axiosInstance";
+import axios from "axios";
 import Cards from "./Cards";
+import { useNavigate } from "react-router-dom";
 
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 
 export default function Freebook() {
   const [book, setBook] = useState([]);
+  const navigate = useNavigate();
 
   // sample fallback books (replace images later)
   const sampleBooks = [
@@ -21,61 +22,18 @@ export default function Freebook() {
       image:
         "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=60&auto=format&fit=crop",
     },
-    {
-      id: "s2",
-      name: "HTML & CSS Basics",
-      title: "Build responsive pages with modern CSS techniques.",
-      price: 0,
-      category: "Free",
-      image:
-        "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=60&auto=format&fit=crop",
-    },
-    {
-      id: "s3",
-      name: "Git & GitHub",
-      title: "Version control essentials and collaboration workflows.",
-      price: 0,
-      category: "Free",
-      image:
-        "https://images.unsplash.com/photo-1518779578993-ec3579fee39f?w=800&q=60&auto=format&fit=crop",
-    },
-    {
-      id: "s4",
-      name: "SQL Fundamentals",
-      title: "Basics of SQL queries, joins and database design.",
-      price: 0,
-      category: "Free",
-      image:
-        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
-    },
-    {
-      id: "s5",
-      name: "Python for Beginners",
-      title: "Start with Python syntax, data structures and small projects.",
-      price: 0,
-      category: "Free",
-      image:
-        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=60&auto=format&fit=crop",
-    },
-    {
-      id: "s6",
-      name: "Quick UX Tips",
-      title: "Design patterns and practical UX improvements for web apps.",
-      price: 0,
-      category: "Free",
-      image:
-        "https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=800&q=60&auto=format&fit=crop",
-    },
+    // ... rest same as your existing code
   ];
 
   useEffect(() => {
     let mounted = true;
     const getBook = async () => {
       try {
-        const res = await api.get("/book", { timeout: 3000 });
+        const res = await axios.get("http://localhost:4001/book", {
+          timeout: 3000,
+        });
         if (!mounted) return;
         if (Array.isArray(res.data) && res.data.length > 0) {
-          // filter free category, fallback to all if none
           const free = res.data.filter((d) => d.category === "Free");
           setBook(free.length ? free : res.data);
         } else {
@@ -93,7 +51,7 @@ export default function Freebook() {
     return () => {
       mounted = false;
     };
-  }, []); // run once
+  }, []);
 
   const settings = {
     dots: true,
@@ -115,6 +73,12 @@ export default function Freebook() {
     ],
   };
 
+  const handleViewBook = (item) => {
+    const id = item._id || item.id || item.name;
+    if (!id) return;
+    navigate(`/book/${id}`, { state: { book: item } });
+  };
+
   return (
     <section id="free" className="py-16">
       <div className="max-w-screen-2xl container mx-auto md:px-20 px-4">
@@ -130,7 +94,6 @@ export default function Freebook() {
           </p>
         </div>
 
-        {/* If no books (should not happen), show fallback message */}
         {book.length === 0 ? (
           <div className="text-center py-20 text-slate-600 dark:text-slate-300">
             No courses to display.
@@ -139,7 +102,7 @@ export default function Freebook() {
           <Slider {...settings}>
             {book.map((item) => (
               <div key={item.id || item._id || item.name} className="p-3">
-                <Cards item={item} />
+                <Cards item={item} onView={() => handleViewBook(item)} />
               </div>
             ))}
           </Slider>

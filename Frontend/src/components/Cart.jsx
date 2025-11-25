@@ -3,30 +3,70 @@ import React from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useCart } from "../context/CartProvider";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthProvider";
+import toast from "react-hot-toast";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=60&auto=format&fit=crop";
 
 export default function Cart() {
-  const { items, updateQty, removeFromCart, clearCart, totalItems, totalPrice } =
-    useCart();
+  const {
+    items,
+    updateQty,
+    removeFromCart,
+    clearCart,
+    totalItems,
+    totalPrice,
+  } = useCart();
+  const [authUser] = useAuth();
+  const isAdmin = authUser?.role === "admin";
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleCheckout = () => {
-    if (!items.length) return;
-    alert(
-      `Demo checkout: ${totalItems} item(s), total ₹${totalPrice}. Implement real payment later.`
+    if (!items.length) {
+      toast("Your cart is empty.");
+      return;
+    }
+
+    // If not logged in, send to login, remember from where
+    if (!authUser) {
+      toast("Please log in to checkout.", { icon: "🔒" });
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+
+    // Demo checkout for logged in user
+    toast.success(
+      `Checkout successful: ${totalItems} item(s), total ₹${totalPrice.toFixed(
+        2
+      )}`
     );
+
+    clearCart();
   };
 
   return (
     <>
       <Navbar />
+
       <main className="max-w-screen-2xl container mx-auto px-5 md:px-20 pt-24 pb-16 dark:text-white">
         <h1 className="text-2xl md:text-3xl font-extrabold mb-4">Your cart</h1>
 
-        {!items.length ? (
+        {/* ADMIN – no cart */}
+        {isAdmin ? (
+          <div className="mt-10 text-center text-slate-600 dark:text-slate-300">
+            <p>Cart is not available for admin accounts.</p>
+            <button
+              onClick={() => navigate("/course")}
+              className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm"
+            >
+              Go to Books
+            </button>
+          </div>
+        ) : !items.length ? (
+          // EMPTY CART (guest or user)
           <div className="mt-10 text-center text-slate-600 dark:text-slate-300">
             <p>Your cart is empty.</p>
             <button
@@ -37,8 +77,9 @@ export default function Cart() {
             </button>
           </div>
         ) : (
+          // CART WITH ITEMS
           <div className="grid lg:grid-cols-3 gap-8 mt-6">
-            {/* Items */}
+            {/* Items list */}
             <section className="lg:col-span-2 space-y-4">
               {items.map((item) => {
                 const book = item.book || {};
@@ -62,6 +103,7 @@ export default function Cart() {
                         }}
                       />
                     </div>
+
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
                         <h2 className="text-sm md:text-base font-semibold line-clamp-2">
@@ -78,6 +120,7 @@ export default function Cart() {
                       </div>
 
                       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                        {/* Quantity control */}
                         <div className="inline-flex items-center border rounded-full overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                           <button
                             type="button"
@@ -98,6 +141,7 @@ export default function Cart() {
                           </button>
                         </div>
 
+                        {/* Price / total */}
                         <div className="flex items-center gap-4">
                           <div className="text-right">
                             <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -107,6 +151,7 @@ export default function Cart() {
                               {price === 0 ? "Free" : `₹${price}`}
                             </div>
                           </div>
+
                           {price > 0 && (
                             <div className="text-right">
                               <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -121,6 +166,7 @@ export default function Cart() {
                       </div>
                     </div>
 
+                    {/* Remove */}
                     <button
                       type="button"
                       onClick={() => removeFromCart(id)}
@@ -133,17 +179,21 @@ export default function Cart() {
               })}
             </section>
 
-            {/* Summary */}
+            {/* Summary panel */}
             <aside className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 h-fit">
               <h2 className="text-lg font-semibold mb-3">Order summary</h2>
+
               <div className="flex justify-between text-sm mb-1">
                 <span>Items</span>
                 <span>{totalItems}</span>
               </div>
+
               <div className="flex justify-between text-sm mb-3">
                 <span>Subtotal</span>
                 <span>
-                  {totalPrice === 0 ? "Free" : `₹${totalPrice.toFixed(2)}`}
+                  {totalPrice === 0
+                    ? "Free"
+                    : `₹${totalPrice.toFixed(2)}`}
                 </span>
               </div>
 
@@ -152,7 +202,7 @@ export default function Cart() {
                 onClick={handleCheckout}
                 className="w-full mt-2 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
               >
-                Proceed to checkout (demo)
+                Proceed to checkout
               </button>
 
               <button
@@ -166,6 +216,7 @@ export default function Cart() {
           </div>
         )}
       </main>
+
       <Footer />
     </>
   );

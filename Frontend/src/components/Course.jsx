@@ -1,7 +1,7 @@
 // Frontend/src/components/Course.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import Navbar from "../components/Navbar";
-import Cards from "../components/Cards";
+import Navbar from "./Navbar";
+import Cards from "./Cards";
 import { useAuth } from "../context/AuthProvider";
 import api from "../api/axiosInstance";
 
@@ -9,7 +9,7 @@ import api from "../api/axiosInstance";
  * Book listing (shop page)
  * - Admin: Add / Edit / Delete (uses backend only)
  * - Dummy data fallback when backend is down
- * - Clicking a book card or "Buy" → /book/:id (handled in Cards)
+ * - Clicking a book card → /book/:id (handled in Cards)
  */
 
 const DUMMY_BOOKS = [
@@ -22,6 +22,8 @@ const DUMMY_BOOKS = [
     genre: "Programming",
     author: "John Doe",
     publisher: "CodePress",
+    language: "English",
+    pages: 220,
     image:
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=60&auto=format&fit=crop",
     description:
@@ -36,6 +38,8 @@ const DUMMY_BOOKS = [
     genre: "Web Development",
     author: "Sarah Lee",
     publisher: "Reactify",
+    language: "English",
+    pages: 320,
     image:
       "https://images.unsplash.com/photo-1526378723456-5e0f2c97f2c6?w=800&q=60&auto=format&fit=crop",
     description:
@@ -50,6 +54,8 @@ const DUMMY_BOOKS = [
     genre: "Design",
     author: "Emily Clark",
     publisher: "Layout Labs",
+    language: "English",
+    pages: 260,
     image:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=60&auto=format&fit=crop",
     description: "Practical approaches to layout and styling for modern web apps.",
@@ -63,35 +69,11 @@ const DUMMY_BOOKS = [
     genre: "Backend",
     author: "Alex Kumar",
     publisher: "ServerSide",
+    language: "English",
+    pages: 280,
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
     description: "Start building servers and REST APIs using Node.js and Express.",
-  },
-  {
-    id: "d5",
-    name: "Python for Beginners",
-    title: "Syntax, data structures and mini projects.",
-    price: 0,
-    category: "Free",
-    genre: "Programming",
-    author: "Priya Nair",
-    publisher: "PyPress",
-    image:
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=60&auto=format&fit=crop",
-    description: "A friendly introduction to Python for total beginners.",
-  },
-  {
-    id: "d6",
-    name: "SQL Fundamentals",
-    title: "Queries, joins and basic design.",
-    price: 0,
-    category: "Free",
-    genre: "Databases",
-    author: "Michael Chen",
-    publisher: "DataHouse",
-    image:
-      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
-    description: "Learn to read & write SQL for relational databases.",
   },
 ];
 
@@ -122,6 +104,8 @@ export default function Course() {
     genre: "",
     author: "",
     publisher: "",
+    language: "English",
+    pages: "",
     image: "",
     title: "",
     description: "",
@@ -181,6 +165,7 @@ export default function Course() {
     return price === 0 || cat === "free";
   };
 
+  // Filter + sort
   const processed = useMemo(() => {
     let arr = [...books];
 
@@ -239,6 +224,8 @@ export default function Course() {
       genre: "",
       author: "",
       publisher: "",
+      language: "English",
+      pages: "",
       image: "",
       title: "",
       description: "",
@@ -260,6 +247,8 @@ export default function Course() {
       genre: book.genre || "",
       author: book.author || "",
       publisher: book.publisher || "",
+      language: book.language || "English",
+      pages: book.pages || "",
       image: book.image || "",
       title: book.title || "",
       description: book.description || "",
@@ -306,18 +295,24 @@ export default function Course() {
     }
 
     const numericPrice = Number(form.price) || 0;
+    const pagesNum =
+      form.pages === "" ? undefined : Math.max(0, Number(form.pages) || 0);
+
     const categoryToSend =
       numericPrice === 0 ? "Free" : form.category || "Premium";
+
+    const payload = {
+      ...form,
+      price: numericPrice,
+      category: categoryToSend,
+      pages: pagesNum,
+    };
 
     setSaving(true);
     try {
       if (editing && (editing._id || editing.id)) {
         const id = editing._id || editing.id;
-        const res = await api.put(`/book/${id}`, {
-          ...form,
-          price: numericPrice,
-          category: categoryToSend,
-        });
+        const res = await api.put(`/book/${id}`, payload);
         const updated = res.data.book;
         setBooks((prev) =>
           prev.map((b) =>
@@ -325,11 +320,7 @@ export default function Course() {
           )
         );
       } else {
-        const res = await api.post("/book", {
-          ...form,
-          price: numericPrice,
-          category: categoryToSend,
-        });
+        const res = await api.post("/book", payload);
         const created = res.data.book;
         setBooks((prev) => [created, ...prev]);
       }
@@ -488,7 +479,7 @@ export default function Course() {
         {/* ADMIN: Add/Edit form modal */}
         {isAdmin && showForm && (
           <dialog id="book_form_modal" open className="modal">
-            <div className="modal-box max-w-lg rounded-2xl p-6 bg-white text-slate-900">
+            <div className="modal-box max-w-xl rounded-2xl p-6 bg-white text-slate-900">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold">
                   {editing ? "Edit Book" : "Add New Book"}
@@ -580,29 +571,59 @@ export default function Course() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-slate-700">
-                    Publisher
-                  </label>
-                  <input
-                    name="publisher"
-                    value={form.publisher}
-                    onChange={handleFormChange}
-                    placeholder="Publisher name"
-                    className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Publisher
+                    </label>
+                    <input
+                      name="publisher"
+                      value={form.publisher}
+                      onChange={handleFormChange}
+                      placeholder="Publisher name"
+                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Language
+                    </label>
+                    <input
+                      name="language"
+                      value={form.language}
+                      onChange={handleFormChange}
+                      placeholder="e.g. English"
+                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-slate-700">
-                    Image URL
-                  </label>
-                  <input
-                    name="image"
-                    value={form.image}
-                    onChange={handleFormChange}
-                    className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Pages
+                    </label>
+                    <input
+                      name="pages"
+                      type="number"
+                      value={form.pages}
+                      onChange={handleFormChange}
+                      placeholder="e.g. 250"
+                      min="0"
+                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700">
+                      Image URL
+                    </label>
+                    <input
+                      name="image"
+                      value={form.image}
+                      onChange={handleFormChange}
+                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    />
+                  </div>
                 </div>
 
                 <div>
