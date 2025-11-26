@@ -1,7 +1,7 @@
 // Frontend/src/components/Course.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import Navbar from "./Navbar";
-import Cards from "./Cards";
+import Navbar from "../components/Navbar";
+import Cards from "../components/Cards";
 import { useAuth } from "../context/AuthProvider";
 import api from "../api/axiosInstance";
 
@@ -22,8 +22,6 @@ const DUMMY_BOOKS = [
     genre: "Programming",
     author: "John Doe",
     publisher: "CodePress",
-    language: "English",
-    pages: 220,
     image:
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=60&auto=format&fit=crop",
     description:
@@ -38,8 +36,6 @@ const DUMMY_BOOKS = [
     genre: "Web Development",
     author: "Sarah Lee",
     publisher: "Reactify",
-    language: "English",
-    pages: 320,
     image:
       "https://images.unsplash.com/photo-1526378723456-5e0f2c97f2c6?w=800&q=60&auto=format&fit=crop",
     description:
@@ -54,8 +50,6 @@ const DUMMY_BOOKS = [
     genre: "Design",
     author: "Emily Clark",
     publisher: "Layout Labs",
-    language: "English",
-    pages: 260,
     image:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=60&auto=format&fit=crop",
     description: "Practical approaches to layout and styling for modern web apps.",
@@ -69,11 +63,35 @@ const DUMMY_BOOKS = [
     genre: "Backend",
     author: "Alex Kumar",
     publisher: "ServerSide",
-    language: "English",
-    pages: 280,
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
     description: "Start building servers and REST APIs using Node.js and Express.",
+  },
+  {
+    id: "d5",
+    name: "Python for Beginners",
+    title: "Syntax, data structures and mini projects.",
+    price: 0,
+    category: "Free",
+    genre: "Programming",
+    author: "Priya Nair",
+    publisher: "PyPress",
+    image:
+      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=60&auto=format&fit=crop",
+    description: "A friendly introduction to Python for total beginners.",
+  },
+  {
+    id: "d6",
+    name: "SQL Fundamentals",
+    title: "Queries, joins and basic design.",
+    price: 0,
+    category: "Free",
+    genre: "Databases",
+    author: "Michael Chen",
+    publisher: "DataHouse",
+    image:
+      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
+    description: "Learn to read & write SQL for relational databases.",
   },
 ];
 
@@ -89,8 +107,9 @@ export default function Course() {
 
   // UI state
   const [q, setQ] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [sort, setSort] = useState("default");
+  const [activeCategory, setActiveCategory] = useState("all"); // all | Free | Premium
+  const [sort, setSort] = useState("default"); // default | price-asc | price-desc
+  const [genreFilter, setGenreFilter] = useState("all");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 12;
 
@@ -104,8 +123,6 @@ export default function Course() {
     genre: "",
     author: "",
     publisher: "",
-    language: "English",
-    pages: "",
     image: "",
     title: "",
     description: "",
@@ -126,7 +143,7 @@ export default function Course() {
         setBackendLive(true);
         setBooks(data);
 
-        if (data.length === 0) {
+        if (data.length === 0 && isAdmin) {
           setError("No books in catalog yet. Use 'Add Book' to create one.");
         } else {
           setError("");
@@ -147,7 +164,7 @@ export default function Course() {
     return () => {
       canceled = true;
     };
-  }, []);
+  }, [isAdmin]);
 
   // Listen to search from Navbar
   useEffect(() => {
@@ -165,10 +182,20 @@ export default function Course() {
     return price === 0 || cat === "free";
   };
 
-  // Filter + sort
+  // collect genres from loaded books for filter dropdown
+  const genres = useMemo(() => {
+    const set = new Set();
+    books.forEach((b) => {
+      const g = (b.genre || b.category || "").trim();
+      if (g) set.add(g);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [books]);
+
   const processed = useMemo(() => {
     let arr = [...books];
 
+    // Category filter
     if (activeCategory !== "all") {
       if (activeCategory === "Free") {
         arr = arr.filter(isFreeBook);
@@ -181,6 +208,15 @@ export default function Course() {
       }
     }
 
+    // Genre filter
+    if (genreFilter !== "all") {
+      const gf = genreFilter.toLowerCase();
+      arr = arr.filter((b) =>
+        ((b.genre || b.category || "").toLowerCase() || "").includes(gf)
+      );
+    }
+
+    // Search
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       arr = arr.filter(
@@ -192,13 +228,14 @@ export default function Course() {
       );
     }
 
+    // Sort
     if (sort === "price-asc")
       arr.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
     else if (sort === "price-desc")
       arr.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
 
     return arr;
-  }, [books, q, activeCategory, sort]);
+  }, [books, q, activeCategory, sort, genreFilter]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   useEffect(() => {
@@ -224,8 +261,6 @@ export default function Course() {
       genre: "",
       author: "",
       publisher: "",
-      language: "English",
-      pages: "",
       image: "",
       title: "",
       description: "",
@@ -247,8 +282,6 @@ export default function Course() {
       genre: book.genre || "",
       author: book.author || "",
       publisher: book.publisher || "",
-      language: book.language || "English",
-      pages: book.pages || "",
       image: book.image || "",
       title: book.title || "",
       description: book.description || "",
@@ -295,24 +328,17 @@ export default function Course() {
     }
 
     const numericPrice = Number(form.price) || 0;
-    const pagesNum =
-      form.pages === "" ? undefined : Math.max(0, Number(form.pages) || 0);
-
-    const categoryToSend =
-      numericPrice === 0 ? "Free" : form.category || "Premium";
-
-    const payload = {
-      ...form,
-      price: numericPrice,
-      category: categoryToSend,
-      pages: pagesNum,
-    };
+    const categoryToSend = numericPrice === 0 ? "Free" : form.category || "Premium";
 
     setSaving(true);
     try {
       if (editing && (editing._id || editing.id)) {
         const id = editing._id || editing.id;
-        const res = await api.put(`/book/${id}`, payload);
+        const res = await api.put(`/book/${id}`, {
+          ...form,
+          price: numericPrice,
+          category: categoryToSend,
+        });
         const updated = res.data.book;
         setBooks((prev) =>
           prev.map((b) =>
@@ -320,7 +346,11 @@ export default function Course() {
           )
         );
       } else {
-        const res = await api.post("/book", payload);
+        const res = await api.post("/book", {
+          ...form,
+          price: numericPrice,
+          category: categoryToSend,
+        });
         const created = res.data.book;
         setBooks((prev) => [created, ...prev]);
       }
@@ -334,16 +364,27 @@ export default function Course() {
     }
   };
 
+  const hasAnyFilterActive =
+    activeCategory !== "all" || genreFilter !== "all" || (q || "").trim().length > 0;
+
+  const clearFilters = () => {
+    setActiveCategory("all");
+    setGenreFilter("all");
+    setQ("");
+    window.dispatchEvent(new CustomEvent("navbar-search", { detail: "" }));
+    setPage(1);
+  };
+
   return (
     <>
       <Navbar />
 
       <div className="max-w-screen-2xl container mx-auto md:px-20 px-4 min-h-screen pt-24">
         {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold">Browse books</h1>
-            <p className="text-slate-600 dark:text-slate-300 mt-1">
+            <h1 className="text-2xl md:text-3xl font-extrabold">Browse books</h1>
+            <p className="text-slate-600 dark:text-slate-300 mt-1 text-sm md:text-base">
               {authUser
                 ? isAdmin
                   ? "You are logged in as Admin — manage your catalog below."
@@ -351,13 +392,13 @@ export default function Course() {
                 : "Discover free and premium books. Log in when you're ready to buy."}
             </p>
             {!backendLive && (
-              <p className="text-xs text-yellow-600 dark:text-yellow-300 mt-1">
+              <p className="text-[11px] text-yellow-600 dark:text-yellow-300 mt-1">
                 Backend not reachable — using sample data. Admin actions need backend running.
               </p>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 justify-end">
             {/* Category chips */}
             <div className="hidden md:flex items-center gap-2">
               {["all", "Free", "Premium"].map((c) => (
@@ -367,16 +408,33 @@ export default function Course() {
                     setActiveCategory(c);
                     setPage(1);
                   }}
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  className={`px-3 py-1 rounded-full text-xs md:text-sm font-medium ${
                     activeCategory === c
                       ? "bg-indigo-600 text-white"
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                   }`}
                 >
                   {c === "all" ? "All" : c}
                 </button>
               ))}
             </div>
+
+            {/* Genre filter */}
+            <select
+              value={genreFilter}
+              onChange={(e) => {
+                setGenreFilter(e.target.value);
+                setPage(1);
+              }}
+              className="select select-bordered h-9 min-h-[2.25rem] text-xs md:text-sm dark:bg-slate-800 dark:text-white"
+            >
+              <option value="all">All genres</option>
+              {genres.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
 
             {/* Sort dropdown */}
             <select
@@ -385,7 +443,7 @@ export default function Course() {
                 setSort(e.target.value);
                 setPage(1);
               }}
-              className="select select-bordered h-10 dark:bg-slate-800 dark:text-white"
+              className="select select-bordered h-9 min-h-[2.25rem] text-xs md:text-sm dark:bg-slate-800 dark:text-white"
             >
               <option value="default">Sort</option>
               <option value="price-asc">Price: Low → High</option>
@@ -396,7 +454,7 @@ export default function Course() {
             {isAdmin && (
               <button
                 onClick={openCreateForm}
-                className="px-4 py-2 bg-green-600 text-white rounded-md text-sm"
+                className="px-4 py-2 bg-green-600 text-white rounded-md text-xs md:text-sm"
               >
                 + Add Book
               </button>
@@ -404,26 +462,47 @@ export default function Course() {
           </div>
         </div>
 
-        {/* Error message */}
+        {/* Filter summary row */}
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs md:text-sm">
+          <div className="text-slate-600 dark:text-slate-300">
+            {processed.length} result{processed.length !== 1 ? "s" : ""} found
+            {q ? (
+              <>
+                {" "}
+                for <span className="font-semibold">"{q}"</span>
+              </>
+            ) : null}
+          </div>
+          {hasAnyFilterActive && (
+            <button
+              onClick={clearFilters}
+              className="text-[11px] md:text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 underline"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Error message (mainly for admin when empty DB) */}
         {error && (
-          <div className="mb-4 p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 text-sm">
+          <div className="mb-4 p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 text-xs md:text-sm">
             {error}
           </div>
         )}
 
         {/* Books grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {Array.from({ length: 8 }).map((_, i) => (
               <div
                 key={i}
-                className="animate-pulse bg-white dark:bg-slate-800 rounded-lg h-72 p-4"
+                className="animate-pulse bg-white dark:bg-slate-800 rounded-lg h-64 md:h-72 border border-slate-200 dark:border-slate-700"
               />
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
               {pageItems.length ? (
                 pageItems.map((item) => {
                   const id = item._id || item.id || item.name;
@@ -444,42 +523,42 @@ export default function Course() {
             </div>
 
             {/* pagination controls */}
-            <div className="mt-8 flex items-center justify-between">
-              <div className="text-sm text-slate-600 dark:text-slate-300">
-                Showing {(page - 1) * PAGE_SIZE + 1} —{" "}
-                {Math.min(page * PAGE_SIZE, processed.length || books.length)} of{" "}
-                {processed.length}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="btn btn-sm"
-                >
-                  Prev
-                </button>
-                <div className="px-3">
-                  Page {page} / {totalPages}
+            {processed.length > PAGE_SIZE && (
+              <div className="mt-6 md:mt-8 flex items-center justify-between text-xs md:text-sm">
+                <div className="text-slate-600 dark:text-slate-300">
+                  Showing {(page - 1) * PAGE_SIZE + 1} –{" "}
+                  {Math.min(page * PAGE_SIZE, processed.length || books.length)} of{" "}
+                  {processed.length}
                 </div>
-                <button
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={page >= totalPages}
-                  className="btn btn-sm"
-                >
-                  Next
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="btn btn-sm min-h-[2rem] h-8"
+                  >
+                    Prev
+                  </button>
+                  <div className="px-2 md:px-3">
+                    Page {page} / {totalPages}
+                  </div>
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="btn btn-sm min-h-[2rem] h-8"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
 
         {/* ADMIN: Add/Edit form modal */}
         {isAdmin && showForm && (
           <dialog id="book_form_modal" open className="modal">
-            <div className="modal-box max-w-xl rounded-2xl p-6 bg-white text-slate-900">
+            <div className="modal-box max-w-lg rounded-2xl p-6 bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-50">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold">
                   {editing ? "Edit Book" : "Add New Book"}
@@ -498,21 +577,21 @@ export default function Course() {
 
               <form onSubmit={handleFormSubmit} className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Name
                   </label>
                   <input
                     name="name"
                     value={form.name}
                     onChange={handleFormChange}
-                    className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                     required
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                       Price (₹)
                     </label>
                     <input
@@ -520,7 +599,7 @@ export default function Course() {
                       type="number"
                       value={form.price}
                       onChange={handleFormChange}
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                       min="0"
                     />
                     <p className="text-[11px] text-slate-500 mt-1">
@@ -528,14 +607,14 @@ export default function Course() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                       Category
                     </label>
                     <select
                       name="category"
                       value={form.category}
                       onChange={handleFormChange}
-                      className="select select-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                      className="select select-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                     >
                       <option value="Free">Free</option>
                       <option value="Premium">Premium</option>
@@ -546,7 +625,7 @@ export default function Course() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                       Genre
                     </label>
                     <input
@@ -554,11 +633,11 @@ export default function Course() {
                       value={form.genre}
                       onChange={handleFormChange}
                       placeholder="e.g. Programming"
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-700">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                       Author
                     </label>
                     <input
@@ -566,87 +645,57 @@ export default function Course() {
                       value={form.author}
                       onChange={handleFormChange}
                       placeholder="Writer name"
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Publisher
-                    </label>
-                    <input
-                      name="publisher"
-                      value={form.publisher}
-                      onChange={handleFormChange}
-                      placeholder="Publisher name"
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Language
-                    </label>
-                    <input
-                      name="language"
-                      value={form.language}
-                      onChange={handleFormChange}
-                      placeholder="e.g. English"
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Pages
-                    </label>
-                    <input
-                      name="pages"
-                      type="number"
-                      value={form.pages}
-                      onChange={handleFormChange}
-                      placeholder="e.g. 250"
-                      min="0"
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700">
-                      Image URL
-                    </label>
-                    <input
-                      name="image"
-                      value={form.image}
-                      onChange={handleFormChange}
-                      className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    Publisher
+                  </label>
+                  <input
+                    name="publisher"
+                    value={form.publisher}
+                    onChange={handleFormChange}
+                    placeholder="Publisher name"
+                    className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    Image URL
+                  </label>
+                  <input
+                    name="image"
+                    value={form.image}
+                    onChange={handleFormChange}
+                    className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Short title
                   </label>
                   <input
                     name="title"
                     value={form.title}
                     onChange={handleFormChange}
-                    className="input input-bordered w-full mt-1 bg-white text-slate-900 border-slate-300"
+                    className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Description
                   </label>
                   <textarea
                     name="description"
                     value={form.description}
                     onChange={handleFormChange}
-                    className="textarea textarea-bordered w-full mt-1 min-h-[90px] bg-white text-slate-900 border-slate-300"
+                    className="textarea textarea-bordered w-full mt-1 min-h-[90px] bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                   />
                 </div>
 
@@ -657,13 +706,13 @@ export default function Course() {
                       setShowForm(false);
                       setEditing(null);
                     }}
-                    className="btn btn-ghost"
+                    className="btn btn-ghost btn-sm"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className={`btn btn-primary ${saving ? "loading" : ""}`}
+                    className={`btn btn-primary btn-sm ${saving ? "loading" : ""}`}
                     disabled={saving}
                   >
                     {saving
