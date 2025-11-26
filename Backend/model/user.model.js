@@ -25,6 +25,11 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    // NEW: profile picture URL
+    avatarUrl: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

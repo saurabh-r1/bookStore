@@ -2,13 +2,14 @@
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./home/Home";
-import Courses from "./components/Course";          // course listing
+import Courses from "./components/Course";
 import About from "./components/About";
 import Signup from "./components/Signup";
 import Login from "./components/Login";
 import Contact from "./components/Contact";
-import BookDetail from "./components/BookDetail";  // single book page
-import Cart from "./components/Cart";              // 🛒 cart page
+import BookDetail from "./components/BookDetail";
+import Cart from "./components/Cart";
+import Profile from "./components/Profile";
 import { Toaster } from "react-hot-toast";
 
 export default function App() {
@@ -17,28 +18,23 @@ export default function App() {
 
   return (
     <div className="dark:bg-slate-900 dark:text-white min-h-screen">
-      {/* MAIN ROUTES */}
+      {/* Main routes */}
       <Routes location={background || location}>
         <Route path="/" element={<Home />} />
-
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
 
-        {/* Books listing */}
         <Route path="/course" element={<Courses />} />
-
-        {/* Book details page */}
         <Route path="/book/:id" element={<BookDetail />} />
 
-        {/* Cart page */}
         <Route path="/cart" element={<Cart />} />
+        <Route path="/profile" element={<Profile />} />
 
-        {/* Auth as standalone pages */}
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
       </Routes>
 
-      {/* If you ever open login/signup as modal over background */}
+      {/* Modal auth routes when opened as modal (optional pattern) */}
       {background && (
         <Routes>
           <Route path="/login" element={<Login isModal />} />

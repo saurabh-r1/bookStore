@@ -30,6 +30,9 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// serve uploaded files
+app.use("/uploads", express.static("uploads"));
+
 // routes
 app.use("/book", bookRoute);
 app.use("/user", userRoute);

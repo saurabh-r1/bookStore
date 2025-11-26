@@ -31,6 +31,7 @@ function Navbar() {
     }
   }, [theme]);
 
+  // sticky navbar
   const [sticky, setSticky] = useState(false);
   useEffect(() => {
     const handleScroll = () => setSticky(window.scrollY > 0);
@@ -38,6 +39,7 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // open login modal
   const openLogin = () => {
     const possibleIds = ["login_modal", "my_modal_3", "auth_modal"];
     for (const id of possibleIds) {
@@ -66,6 +68,7 @@ function Navbar() {
     );
   };
 
+  // search broadcasting to Course page
   const broadcastSearch = (q) => {
     const ev = new CustomEvent("navbar-search", { detail: q });
     window.dispatchEvent(ev);
@@ -85,6 +88,7 @@ function Navbar() {
     }
   };
 
+  // active link styling
   const linkClass = (path) => {
     const base = "px-2 py-1 rounded-md";
     const active =
@@ -123,6 +127,14 @@ function Navbar() {
     </>
   );
 
+  // helper for avatar initial + name
+  const displayName = authUser?.fullname || authUser?.name || "User";
+  const initial =
+    (authUser?.fullname?.[0] ||
+      authUser?.name?.[0] ||
+      "U"
+    ).toUpperCase();
+
   return (
     <>
       <div
@@ -131,6 +143,7 @@ function Navbar() {
         ${sticky ? "shadow-md transition-all duration-300 ease-in-out" : ""}`}
       >
         <div className="navbar">
+          {/* LEFT: logo + mobile menu */}
           <div className="navbar-start">
             <div className="dropdown">
               <div
@@ -173,12 +186,14 @@ function Navbar() {
             </Link>
           </div>
 
+          {/* RIGHT: nav links + search + theme + cart + auth */}
           <div className="navbar-end space-x-3">
+            {/* Center links (desktop) */}
             <div className="navbar-center hidden lg:flex">
               <ul className="menu menu-horizontal px-1">{navItems}</ul>
             </div>
 
-            {/* Search */}
+            {/* Search (desktop) */}
             <div className="hidden md:block">
               <label className="px-3 py-2 border rounded-md flex items-center gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
                 <input
@@ -261,9 +276,49 @@ function Navbar() {
               </button>
             )}
 
-            {/* Auth */}
+            {/* Auth: dropdown for logged-in user, login button for guest */}
             {authUser ? (
-              <Logout />
+              <div className="dropdown dropdown-end">
+                <label
+                  tabIndex={0}
+                  className="btn btn-ghost rounded-full flex items-center gap-2 px-2"
+                >
+                  <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-semibold">
+                    {initial}
+                  </div>
+                  <span className="hidden md:block text-sm dark:text-slate-200 max-w-[110px] truncate">
+                    {displayName}
+                  </span>
+                </label>
+
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu p-2 shadow bg-white dark:bg-slate-800 rounded-box w-44 border dark:border-slate-700"
+                >
+                  <li>
+                    <Link
+                      to="/profile"
+                      className="text-slate-700 dark:text-slate-200"
+                    >
+                      👤 Profile
+                    </Link>
+                  </li>
+
+                  {/* Uncomment when orders page is ready */}
+                  {/* <li>
+                    <Link
+                      to="/orders"
+                      className="text-slate-700 dark:text-slate-200"
+                    >
+                      📦 My Orders
+                    </Link>
+                  </li> */}
+
+                  <li>
+                    <Logout />
+                  </li>
+                </ul>
+              </div>
             ) : (
               <div>
                 <button
