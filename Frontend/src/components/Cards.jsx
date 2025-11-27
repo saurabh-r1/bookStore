@@ -1,3 +1,4 @@
+// Frontend/src/components/Cards.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
@@ -23,6 +24,19 @@ function Cards({ item, onEdit, onDelete }) {
   const publisher = item?.publisher || "";
   const subtitle = item?.title || item?.description || "";
 
+  // --- NEW: "New" badge logic (last 30 days) ---
+  const isNew = (() => {
+    if (!item?.createdAt) return false;
+    try {
+      const created = new Date(item.createdAt).getTime();
+      const now = Date.now();
+      const diffDays = (now - created) / (1000 * 60 * 60 * 24);
+      return diffDays <= 30;
+    } catch {
+      return false;
+    }
+  })();
+
   const handleOpenDetail = () => {
     if (!id) return;
     navigate(`/book/${id}`, { state: { book: item } });
@@ -44,24 +58,40 @@ function Cards({ item, onEdit, onDelete }) {
   };
 
   return (
-    <div className="p-1.5 sm:p-2">
+    <div className="p-2">
       <div
         onClick={handleOpenDetail}
-        className="bg-white dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-700
-        rounded-xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200
+        className="relative bg-white dark:bg-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 
+        rounded-xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 
         cursor-pointer flex flex-col h-full"
       >
-        {/* IMAGE – show full book, slightly smaller card */}
-        <div className="w-full h-44 md:h-52 flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-t-xl p-2">
-          <img
-            src={imgSrc}
-            alt={name}
-            className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = placeholder;
-            }}
-          />
+        {/* BADGES (top-left) */}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
+          {isNew && (
+            <span className="px-2 py-[2px] rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200 shadow-sm">
+              New
+            </span>
+          )}
+          {isFree && (
+            <span className="px-2 py-[2px] rounded-full text-[10px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/60 dark:text-green-200 shadow-sm">
+              Free
+            </span>
+          )}
+        </div>
+
+        {/* IMAGE – fixed ratio, full book visible */}
+        <div className="w-full flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-t-xl p-2">
+          <div className="w-full aspect-[3/4] flex items-center justify-center overflow-hidden">
+            <img
+              src={imgSrc}
+              alt={name}
+              className="w-full h-full object-contain transition-transform duration-300 hover:scale-105"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = placeholder;
+              }}
+            />
+          </div>
         </div>
 
         {/* CONTENT */}
