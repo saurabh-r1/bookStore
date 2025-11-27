@@ -13,8 +13,8 @@ import Cart from "./components/Cart";
 import Profile from "./components/Profile";
 import Orders from "./components/Orders";
 import AdminOrders from "./components/AdminOrders";
-import Payments from "./components/Payments";      // ⬅ NEW
-import Analytics from "./components/Analytics";    // ⬅ NEW
+import Payments from "./components/Payments";
+import Analytics from "./components/Analytics";
 
 import { Toaster } from "react-hot-toast";
 import { useAuth } from "./context/AuthProvider";

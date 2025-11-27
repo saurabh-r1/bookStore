@@ -332,7 +332,7 @@ export default function BookDetail() {
                       </div>
                       {!isFree(book) && (
                         <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                          Inclusive of all taxes (demo)
+                          Inclusive of all taxes
                         </div>
                       )}
                     </div>
@@ -363,7 +363,7 @@ export default function BookDetail() {
                           </button>
                         </div>
                         <div className="text-[11px] text-slate-400 dark:text-slate-500">
-                          Max 10 per order (demo)
+                          Max 10 per order
                         </div>
                       </div>
                     )}

@@ -54,7 +54,7 @@ export default function Cart() {
       const res = await api.post("/orders", payload);
 
       toast.success(
-        `Order placed (demo): ${totalItems} item(s), total ₹${totalPrice.toFixed(
+        `Order placed : ${totalItems} item(s), total ₹${totalPrice.toFixed(
           2
         )}`,
         { icon: "✅" }
@@ -231,7 +231,7 @@ export default function Cart() {
                 onClick={handleCheckout}
                 className="w-full mt-2 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
               >
-                Place order (demo)
+                Place order
               </button>
 
               <button
