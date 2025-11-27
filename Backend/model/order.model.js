@@ -30,19 +30,37 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    items: {
-      type: [orderItemSchema],
-      required: true,
-    },
+
+    items: [orderItemSchema],
+
+    // Final charged amount (after discounts, etc.)
     total: {
       type: Number,
       required: true,
       min: 0,
     },
+
+    // Order lifecycle
     status: {
       type: String,
       enum: ["placed", "cancelled", "shipped", "delivered"],
       default: "placed",
+    },
+
+    // 💳 Payment info (for structure only)
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "free"],
+      default: "pending",
+    },
+    paymentMethod: {
+      type: String, // e.g. "razorpay", "stripe", "cod", etc.
+    },
+    paymentId: {
+      type: String, // e.g. gateway payment id / reference
+    },
+    paymentMeta: {
+      type: Object, // any gateway response you want to store (optional)
     },
   },
   { timestamps: true }

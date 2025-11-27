@@ -1,7 +1,7 @@
 // Backend/controller/order.controller.js
 import Order from "../model/order.model.js";
 
-// USER: create order
+// USER: place order (current demo: "instant paid" / free)
 export const createOrder = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -15,6 +15,14 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: "No items to order" });
     }
 
+    const numericTotal = Number(total || 0);
+
+    // In real world: here you would create a payment (Razorpay/Stripe/etc.)
+    // and return client secret / order id to frontend.
+    // For now we just mark as "paid" or "free" directly.
+    const paymentStatus =
+      numericTotal <= 0 ? "free" : "paid";
+
     const order = new Order({
       user: userId,
       items: items.map((it) => ({
@@ -22,8 +30,13 @@ export const createOrder = async (req, res) => {
         qty: it.qty,
         priceAtPurchase: Number(it.book?.price || 0),
       })),
-      total: Number(total || 0),
+      total: numericTotal,
       status: "placed",
+
+      // demo payment info
+      paymentStatus,
+      paymentMethod: numericTotal <= 0 ? "free" : "demo",
+      paymentId: numericTotal <= 0 ? undefined : `DEMO_${Date.now()}`,
     });
 
     await order.save();
@@ -57,7 +70,7 @@ export const getMyOrders = async (req, res) => {
   }
 };
 
-// 🚩 ADMIN: get all orders
+// ADMIN: get all orders
 export const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
@@ -67,41 +80,38 @@ export const getAllOrders = async (req, res) => {
 
     res.status(200).json(orders);
   } catch (err) {
-    console.error("Get ALL orders error:", err);
+    console.error("Get all orders error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// 🚩 ADMIN: update order status
+// ADMIN: update order status (e.g. shipped, delivered, cancelled)
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, paymentStatus } = req.body;
 
-    const allowedStatuses = ["placed", "shipped", "delivered", "cancelled"];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        message: `Invalid status. Allowed: ${allowedStatuses.join(", ")}`,
-      });
-    }
-
-    const order = await Order.findById(id)
+    const updated = await Order.findByIdAndUpdate(
+      id,
+      {
+        ...(status && { status }),
+        ...(paymentStatus && { paymentStatus }),
+      },
+      { new: true }
+    )
       .populate("user", "fullname email")
       .populate("items.book");
 
-    if (!order) {
+    if (!updated) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    order.status = status;
-    await order.save();
-
     res.status(200).json({
-      message: "Order status updated",
-      order,
+      message: "Order updated",
+      order: updated,
     });
   } catch (err) {
-    console.error("Update order status error:", err);
+    console.error("Update order error:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };

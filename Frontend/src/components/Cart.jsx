@@ -1,11 +1,12 @@
+// Frontend/src/components/Cart.jsx
 import React from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import { useCart } from "../context/CartProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
-import toast from "react-hot-toast";
 import api from "../api/axiosInstance";
+import toast from "react-hot-toast";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=60&auto=format&fit=crop";
@@ -30,23 +31,37 @@ export default function Cart() {
       return;
     }
 
-    // If not logged in, send to login, remember from where
     if (!authUser) {
       toast("Please log in to checkout.", { icon: "🔒" });
       navigate("/login", { state: { from: location } });
       return;
     }
 
-    // Build payload for backend
-    const payload = {
-      items, // [{ bookId, book, qty }]
-      total: totalPrice,
-    };
-
     try {
+      // Build payload expected by createOrder controller
+      const payload = {
+        items: items.map((it) => ({
+          bookId: it.bookId,
+          qty: it.qty,
+          book: {
+            _id: it.book?._id,
+            price: it.book?.price,
+          },
+        })),
+        total: totalPrice,
+      };
+
       const res = await api.post("/orders", payload);
-      toast.success(res.data?.message || "Order placed successfully.");
+
+      toast.success(
+        `Order placed (demo): ${totalItems} item(s), total ₹${totalPrice.toFixed(
+          2
+        )}`,
+        { icon: "✅" }
+      );
+
       clearCart();
+      // optional: navigate to orders page
       navigate("/orders");
     } catch (err) {
       console.error("Checkout / order error:", err?.message);
@@ -76,7 +91,7 @@ export default function Cart() {
             </button>
           </div>
         ) : !items.length ? (
-          // EMPTY CART (guest or user)
+          // EMPTY CART
           <div className="mt-10 text-center text-slate-600 dark:text-slate-300">
             <p>Your cart is empty.</p>
             <button
@@ -102,7 +117,7 @@ export default function Cart() {
                     key={id}
                     className="flex gap-4 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
                   >
-                    <div className="w-20 h-24 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="w-20 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-slate-50 dark:bg-slate-800">
                       <img
                         src={book.image || FALLBACK_IMAGE}
                         alt={book.name}
@@ -134,7 +149,9 @@ export default function Cart() {
                         <div className="inline-flex items-center border rounded-full overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                           <button
                             type="button"
-                            onClick={() => updateQty(id, item.qty - 1)}
+                            onClick={() =>
+                              updateQty(id, Math.max(1, item.qty - 1))
+                            }
                             className="px-3 py-1 text-lg hover:bg-slate-100 dark:hover:bg-slate-700"
                           >
                             -
@@ -144,7 +161,9 @@ export default function Cart() {
                           </span>
                           <button
                             type="button"
-                            onClick={() => updateQty(id, item.qty + 1)}
+                            onClick={() =>
+                              updateQty(id, Math.min(10, item.qty + 1))
+                            }
                             className="px-3 py-1 text-lg hover:bg-slate-100 dark:hover:bg-slate-700"
                           >
                             +
@@ -201,7 +220,9 @@ export default function Cart() {
               <div className="flex justify-between text-sm mb-3">
                 <span>Subtotal</span>
                 <span>
-                  {totalPrice === 0 ? "Free" : `₹${totalPrice.toFixed(2)}`}
+                  {totalPrice === 0
+                    ? "Free"
+                    : `₹${totalPrice.toFixed(2)}`}
                 </span>
               </div>
 
@@ -210,7 +231,7 @@ export default function Cart() {
                 onClick={handleCheckout}
                 className="w-full mt-2 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
               >
-                Place order
+                Place order (demo)
               </button>
 
               <button

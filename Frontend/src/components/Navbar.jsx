@@ -1,5 +1,5 @@
 // Frontend/src/components/Navbar.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Login from "./Login";
 import Signup from "./Signup";
@@ -99,32 +99,35 @@ function Navbar() {
     return `${base} ${active}`;
   };
 
-  const navItems = (
-    <>
-      <li>
-        <Link to="/" className={linkClass("/")}>
-          Home
-        </Link>
-      </li>
+  const navItems = useMemo(
+    () => (
+      <>
+        <li>
+          <Link to="/" className={linkClass("/")}>
+            Home
+          </Link>
+        </li>
 
-      <li>
-        <Link to="/course" className={linkClass("/course")}>
-          Books
-        </Link>
-      </li>
+        <li>
+          <Link to="/course" className={linkClass("/course")}>
+            Books
+          </Link>
+        </li>
 
-      <li>
-        <Link to="/contact" className={linkClass("/contact")}>
-          Contact
-        </Link>
-      </li>
+        <li>
+          <Link to="/contact" className={linkClass("/contact")}>
+            Contact
+          </Link>
+        </li>
 
-      <li>
-        <Link to="/about" className={linkClass("/about")}>
-          About
-        </Link>
-      </li>
-    </>
+        <li>
+          <Link to="/about" className={linkClass("/about")}>
+            About
+          </Link>
+        </li>
+      </>
+    ),
+    [location.pathname]
   );
 
   // helper for avatar initial + name
@@ -248,7 +251,7 @@ function Navbar() {
               </svg>
             </label>
 
-            {/* Cart icon – HIDE for admin */}
+            {/* Cart icon – hidden for admin */}
             {!isAdmin && (
               <button
                 onClick={() => navigate("/cart")}
@@ -293,7 +296,7 @@ function Navbar() {
 
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu p-2 shadow bg-white dark:bg-slate-800 rounded-box w-48 border dark:border-slate-700"
+                  className="dropdown-content menu p-2 shadow bg-white dark:bg-slate-800 rounded-box w-52 border dark:border-slate-700 text-sm"
                 >
                   <li>
                     <Link
@@ -304,31 +307,52 @@ function Navbar() {
                     </Link>
                   </li>
 
-                  {isAdmin ? (
-                    <li>
-                      <Link
-                        to="/admin/orders"
-                        className="text-slate-700 dark:text-slate-200"
-                      >
-                        📦 Admin orders
-                      </Link>
-                    </li>
-                  ) : (
+                  {/* Show My Orders only if NOT Admin */}
+                  {!isAdmin && (
                     <li>
                       <Link
                         to="/orders"
                         className="text-slate-700 dark:text-slate-200"
                       >
-                        📦 My orders
+                        📦 My Orders
                       </Link>
                     </li>
                   )}
 
-                  <li className="mt-1 border-t border-slate-200 dark:border-slate-700" />
+                  {isAdmin && (
+                    <>
+                      <li className="menu-title mt-1 text-[11px] uppercase text-slate-400 dark:text-slate-500">
+                        Admin
+                      </li>
+                      <li>
+                        <Link
+                          to="/admin/orders"
+                          className="text-slate-700 dark:text-slate-200"
+                        >
+                          📋 All Orders
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/admin/analytics"
+                          className="text-slate-700 dark:text-slate-200"
+                        >
+                          📊 Analytics
+                        </Link>
+                      </li>
+                      <li>
+                        <Link
+                          to="/admin/payments"
+                          className="text-slate-700 dark:text-slate-200"
+                        >
+                          💳 Payments
+                        </Link>
+                      </li>
+                    </>
+                  )}
 
-                  <li>
                     <Logout />
-                  </li>
+                
                 </ul>
               </div>
             ) : (

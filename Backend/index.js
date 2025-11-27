@@ -7,23 +7,24 @@ import cookieParser from "cookie-parser";
 
 import bookRoute from "./route/book.route.js";
 import userRoute from "./route/user.route.js";
-import orderRoute from "./route/order.route.js"; // ✅ add this
+import orderRoute from "./route/order.route.js";
+import paymentRoute from "./route/payment.route.js";
 
 dotenv.config();
 
 const app = express();
 
-// basic logger (optional)
+// Simple logger
 app.use((req, res, next) => {
   const now = new Date().toISOString();
   console.log(`${now} ${req.method} ${req.url}`);
   next();
 });
 
-// CORS
+// CORS for Vite frontend
 app.use(
   cors({
-    origin: "http://localhost:5173", // your Vite frontend
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -31,13 +32,14 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// serve uploaded files
+// static uploads (for avatar etc.)
 app.use("/uploads", express.static("uploads"));
 
-// routes
+// API routes
 app.use("/book", bookRoute);
 app.use("/user", userRoute);
-app.use("/orders", orderRoute); // ✅ mount orders
+app.use("/orders", orderRoute);
+app.use("/payments", paymentRoute);
 
 // DB connect
 const PORT = process.env.PORT || 4001;
