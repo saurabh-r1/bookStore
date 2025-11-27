@@ -22,8 +22,6 @@ const DUMMY_BOOKS = [
     genre: "Programming",
     author: "John Doe",
     publisher: "CodePress",
-    language: "English",
-    pages: 180,
     image:
       "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=800&q=60&auto=format&fit=crop",
     description:
@@ -38,8 +36,6 @@ const DUMMY_BOOKS = [
     genre: "Web Development",
     author: "Sarah Lee",
     publisher: "Reactify",
-    language: "English",
-    pages: 320,
     image:
       "https://images.unsplash.com/photo-1526378723456-5e0f2c97f2c6?w=800&q=60&auto=format&fit=crop",
     description:
@@ -54,12 +50,9 @@ const DUMMY_BOOKS = [
     genre: "Design",
     author: "Emily Clark",
     publisher: "Layout Labs",
-    language: "English",
-    pages: 260,
     image:
       "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&q=60&auto=format&fit=crop",
-    description:
-      "Practical approaches to layout and styling for modern web apps.",
+    description: "Practical approaches to layout and styling for modern web apps.",
   },
   {
     id: "d4",
@@ -70,12 +63,9 @@ const DUMMY_BOOKS = [
     genre: "Backend",
     author: "Alex Kumar",
     publisher: "ServerSide",
-    language: "English",
-    pages: 240,
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
-    description:
-      "Start building servers and REST APIs using Node.js and Express.",
+    description: "Start building servers and REST APIs using Node.js and Express.",
   },
   {
     id: "d5",
@@ -86,12 +76,9 @@ const DUMMY_BOOKS = [
     genre: "Programming",
     author: "Priya Nair",
     publisher: "PyPress",
-    language: "English",
-    pages: 210,
     image:
       "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=60&auto=format&fit=crop",
-    description:
-      "A friendly introduction to Python for total beginners.",
+    description: "A friendly introduction to Python for total beginners.",
   },
   {
     id: "d6",
@@ -102,12 +89,9 @@ const DUMMY_BOOKS = [
     genre: "Databases",
     author: "Michael Chen",
     publisher: "DataHouse",
-    language: "English",
-    pages: 190,
     image:
       "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=60&auto=format&fit=crop",
-    description:
-      "Learn to read & write SQL for relational databases.",
+    description: "Learn to read & write SQL for relational databases.",
   },
 ];
 
@@ -142,7 +126,7 @@ export default function Course() {
     image: "",
     title: "",
     description: "",
-    language: "English",
+    language: "",
     pages: "",
   });
   const [saving, setSaving] = useState(false);
@@ -266,7 +250,12 @@ export default function Course() {
   }, [processed, page]);
 
   // ADMIN HELPERS
-  const resetForm = () =>
+  const openCreateForm = () => {
+    if (!backendLive) {
+      alert("Backend not connected. Admin create/update works only when API is running.");
+      return;
+    }
+    setEditing(null);
     setForm({
       name: "",
       price: "",
@@ -277,17 +266,9 @@ export default function Course() {
       image: "",
       title: "",
       description: "",
-      language: "English",
+      language: "",
       pages: "",
     });
-
-  const openCreateForm = () => {
-    if (!backendLive) {
-      alert("Backend not connected. Admin create/update works only when API is running.");
-      return;
-    }
-    setEditing(null);
-    resetForm();
     setShowForm(true);
   };
 
@@ -308,8 +289,8 @@ export default function Course() {
       image: book.image || "",
       title: book.title || "",
       description: book.description || "",
-      language: book.language || "English",
-      pages: book.pages || "",
+      language: book.language || "",
+      pages: book.pages ?? "",
     });
     setShowForm(true);
   };
@@ -354,20 +335,14 @@ export default function Course() {
 
     const numericPrice = Number(form.price) || 0;
     const categoryToSend = numericPrice === 0 ? "Free" : form.category || "Premium";
-    const pagesNumber = form.pages ? Number(form.pages) : undefined;
 
+    // Build payload with cleaned fields
     const payload = {
-      name: form.name.trim(),
+      ...form,
       price: numericPrice,
       category: categoryToSend,
-      genre: form.genre.trim() || undefined,
-      author: form.author.trim() || undefined,
-      publisher: form.publisher.trim() || undefined,
-      image: form.image.trim() || undefined,
-      title: form.title.trim() || undefined,
-      description: form.description.trim() || undefined,
-      language: form.language.trim() || undefined,
-      pages: pagesNumber || undefined,
+      language: form.language?.trim() || undefined,
+      pages: form.pages ? Number(form.pages) : undefined,
     };
 
     setSaving(true);
@@ -388,7 +363,6 @@ export default function Course() {
       }
       setShowForm(false);
       setEditing(null);
-      resetForm();
     } catch (err) {
       console.error(err);
       alert(err?.response?.data?.message || "Failed to save book.");
@@ -601,7 +575,6 @@ export default function Course() {
                   onClick={() => {
                     setShowForm(false);
                     setEditing(null);
-                    resetForm();
                   }}
                   className="text-lg"
                 >
@@ -610,7 +583,6 @@ export default function Course() {
               </div>
 
               <form onSubmit={handleFormSubmit} className="space-y-3">
-                {/* Name */}
                 <div>
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Name
@@ -624,64 +596,7 @@ export default function Course() {
                   />
                 </div>
 
-                {/* Author / Publisher */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      Author
-                    </label>
-                    <input
-                      name="author"
-                      value={form.author}
-                      onChange={handleFormChange}
-                      placeholder="Writer name"
-                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      Publisher
-                    </label>
-                    <input
-                      name="publisher"
-                      value={form.publisher}
-                      onChange={handleFormChange}
-                      placeholder="Publisher name"
-                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    />
-                  </div>
-                </div>
-
-                {/* Genre / Language */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      Genre
-                    </label>
-                    <input
-                      name="genre"
-                      value={form.genre}
-                      onChange={handleFormChange}
-                      placeholder="e.g. Programming, Fiction"
-                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      Language
-                    </label>
-                    <input
-                      name="language"
-                      value={form.language}
-                      onChange={handleFormChange}
-                      placeholder="e.g. English"
-                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    />
-                  </div>
-                </div>
-
-                {/* Price / Pages / Category */}
-                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                       Price (₹)
@@ -694,23 +609,9 @@ export default function Course() {
                       className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
                       min="0"
                     />
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-1">
                       Set 0 to make this book Free.
                     </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                      Pages
-                    </label>
-                    <input
-                      name="pages"
-                      type="number"
-                      value={form.pages}
-                      onChange={handleFormChange}
-                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                      min="1"
-                      placeholder="e.g. 320"
-                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -729,7 +630,76 @@ export default function Course() {
                   </div>
                 </div>
 
-                {/* Image URL */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Genre
+                    </label>
+                    <input
+                      name="genre"
+                      value={form.genre}
+                      onChange={handleFormChange}
+                      placeholder="e.g. Programming"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Author
+                    </label>
+                    <input
+                      name="author"
+                      value={form.author}
+                      onChange={handleFormChange}
+                      placeholder="Writer name"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                    />
+                  </div>
+                </div>
+
+                {/* NEW: language + pages */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Language
+                    </label>
+                    <input
+                      name="language"
+                      value={form.language}
+                      onChange={handleFormChange}
+                      placeholder="e.g. English"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                      Pages
+                    </label>
+                    <input
+                      name="pages"
+                      type="number"
+                      min="1"
+                      value={form.pages}
+                      onChange={handleFormChange}
+                      placeholder="e.g. 320"
+                      className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                    Publisher
+                  </label>
+                  <input
+                    name="publisher"
+                    value={form.publisher}
+                    onChange={handleFormChange}
+                    placeholder="Publisher name"
+                    className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
+                  />
+                </div>
+
                 <div>
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Image URL
@@ -739,11 +709,9 @@ export default function Course() {
                     value={form.image}
                     onChange={handleFormChange}
                     className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    placeholder="https://..."
                   />
                 </div>
 
-                {/* Short title */}
                 <div>
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Short title
@@ -753,11 +721,9 @@ export default function Course() {
                     value={form.title}
                     onChange={handleFormChange}
                     className="input input-bordered w-full mt-1 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    placeholder="e.g. A complete guide for beginners"
                   />
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                     Description
@@ -767,7 +733,6 @@ export default function Course() {
                     value={form.description}
                     onChange={handleFormChange}
                     className="textarea textarea-bordered w-full mt-1 min-h-[90px] bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700"
-                    placeholder="Write a short description of the book..."
                   />
                 </div>
 
@@ -777,7 +742,6 @@ export default function Course() {
                     onClick={() => {
                       setShowForm(false);
                       setEditing(null);
-                      resetForm();
                     }}
                     className="btn btn-ghost btn-sm"
                   >

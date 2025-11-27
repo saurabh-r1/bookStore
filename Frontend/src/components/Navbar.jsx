@@ -1,4 +1,3 @@
-// Frontend/src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Login from "./Login";
@@ -129,11 +128,11 @@ function Navbar() {
 
   // helper for avatar initial + name
   const displayName = authUser?.fullname || authUser?.name || "User";
-  const initial =
-    (authUser?.fullname?.[0] ||
-      authUser?.name?.[0] ||
-      "U"
-    ).toUpperCase();
+  const initial = (
+    authUser?.fullname?.[0] ||
+    authUser?.name?.[0] ||
+    "U"
+  ).toUpperCase();
 
   return (
     <>
@@ -304,15 +303,14 @@ function Navbar() {
                     </Link>
                   </li>
 
-                  {/* Uncomment when orders page is ready */}
-                  {/* <li>
+                  <li>
                     <Link
                       to="/orders"
                       className="text-slate-700 dark:text-slate-200"
                     >
                       📦 My Orders
                     </Link>
-                  </li> */}
+                  </li>
 
                   <li>
                     <Logout />

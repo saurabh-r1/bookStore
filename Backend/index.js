@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 
 import bookRoute from "./route/book.route.js";
 import userRoute from "./route/user.route.js";
+import orderRoute from "./route/order.route.js"; // ✅ add this
 
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use("/uploads", express.static("uploads"));
 // routes
 app.use("/book", bookRoute);
 app.use("/user", userRoute);
+app.use("/orders", orderRoute); // ✅ mount orders
 
 // DB connect
 const PORT = process.env.PORT || 4001;

@@ -1,4 +1,3 @@
-// Frontend/src/components/Cart.jsx
 import React from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -6,6 +5,7 @@ import { useCart } from "../context/CartProvider";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider";
 import toast from "react-hot-toast";
+import api from "../api/axiosInstance";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=60&auto=format&fit=crop";
@@ -24,7 +24,7 @@ export default function Cart() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!items.length) {
       toast("Your cart is empty.");
       return;
@@ -37,14 +37,24 @@ export default function Cart() {
       return;
     }
 
-    // Demo checkout for logged in user
-    toast.success(
-      `Checkout successful: ${totalItems} item(s), total ₹${totalPrice.toFixed(
-        2
-      )}`
-    );
+    // Build payload for backend
+    const payload = {
+      items, // [{ bookId, book, qty }]
+      total: totalPrice,
+    };
 
-    clearCart();
+    try {
+      const res = await api.post("/orders", payload);
+      toast.success(res.data?.message || "Order placed successfully.");
+      clearCart();
+      navigate("/orders");
+    } catch (err) {
+      console.error("Checkout / order error:", err?.message);
+      const msg =
+        err?.response?.data?.message ||
+        "Failed to place order. Please try again.";
+      toast.error(msg);
+    }
   };
 
   return (
@@ -191,9 +201,7 @@ export default function Cart() {
               <div className="flex justify-between text-sm mb-3">
                 <span>Subtotal</span>
                 <span>
-                  {totalPrice === 0
-                    ? "Free"
-                    : `₹${totalPrice.toFixed(2)}`}
+                  {totalPrice === 0 ? "Free" : `₹${totalPrice.toFixed(2)}`}
                 </span>
               </div>
 
@@ -202,7 +210,7 @@ export default function Cart() {
                 onClick={handleCheckout}
                 className="w-full mt-2 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
               >
-                Proceed to checkout
+                Place order
               </button>
 
               <button
