@@ -1,3 +1,4 @@
+// Frontend/src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Login from "./Login";
@@ -292,7 +293,7 @@ function Navbar() {
 
                 <ul
                   tabIndex={0}
-                  className="dropdown-content menu p-2 shadow bg-white dark:bg-slate-800 rounded-box w-44 border dark:border-slate-700"
+                  className="dropdown-content menu p-2 shadow bg-white dark:bg-slate-800 rounded-box w-48 border dark:border-slate-700"
                 >
                   <li>
                     <Link
@@ -303,14 +304,27 @@ function Navbar() {
                     </Link>
                   </li>
 
-                  <li>
-                    <Link
-                      to="/orders"
-                      className="text-slate-700 dark:text-slate-200"
-                    >
-                      📦 My Orders
-                    </Link>
-                  </li>
+                  {isAdmin ? (
+                    <li>
+                      <Link
+                        to="/admin/orders"
+                        className="text-slate-700 dark:text-slate-200"
+                      >
+                        📦 Admin orders
+                      </Link>
+                    </li>
+                  ) : (
+                    <li>
+                      <Link
+                        to="/orders"
+                        className="text-slate-700 dark:text-slate-200"
+                      >
+                        📦 My orders
+                      </Link>
+                    </li>
+                  )}
+
+                  <li className="mt-1 border-t border-slate-200 dark:border-slate-700" />
 
                   <li>
                     <Logout />

@@ -1,3 +1,4 @@
+// Frontend/src/components/AdminOrders.jsx
 import React, { useEffect, useState } from "react";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
@@ -9,14 +10,22 @@ import toast from "react-hot-toast";
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=800&q=60&auto=format&fit=crop";
 
-export default function Orders() {
+export default function AdminOrders() {
   const [authUser] = useAuth();
+  const navigate = useNavigate();
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const isAdmin = authUser?.role === "admin";
 
   useEffect(() => {
     if (!authUser) {
+      setLoading(false);
+      return;
+    }
+    if (!isAdmin) {
       setLoading(false);
       return;
     }
@@ -24,27 +33,21 @@ export default function Orders() {
     const loadOrders = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/orders");
+        const res = await api.get("/orders/all");
         setOrders(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
-        console.error("Get orders error:", err?.message);
-        const status = err?.response?.status;
+        console.error("Admin get orders error:", err?.message);
         const msg =
-          err?.response?.data?.message || "Failed to load your orders.";
-
+          err?.response?.data?.message ||
+          "Failed to load orders. Please try again.";
         toast.error(msg);
-
-        // If token expired / unauthorized → redirect to login
-        if (status === 401) {
-          navigate("/login");
-        }
       } finally {
         setLoading(false);
       }
     };
 
     loadOrders();
-  }, [authUser, navigate]);
+  }, [authUser, isAdmin]);
 
   const formatDateTime = (d) => {
     if (!d) return "—";
@@ -77,23 +80,48 @@ export default function Orders() {
     }
   };
 
+  const handleStatusChange = async (orderId, newStatus) => {
+    if (!newStatus) return;
+    setUpdatingId(orderId);
+    try {
+      const res = await api.put(`/orders/${orderId}/status`, {
+        status: newStatus,
+      });
+      const updated = res.data.order;
+
+      setOrders((prev) =>
+        prev.map((o) => (o._id === updated._id ? updated : o))
+      );
+      toast.success(`Order status updated to "${newStatus}".`);
+    } catch (err) {
+      console.error("Update status error:", err?.message);
+      toast.error(
+        err?.response?.data?.message || "Failed to update order status."
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   return (
     <>
       <Navbar />
 
       <main className="max-w-screen-2xl container mx-auto px-5 md:px-20 pt-24 pb-16 dark:text-white">
-        <h1 className="text-2xl md:text-3xl font-extrabold mb-1">
-          My orders
-        </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">
-          View your past purchases and free book claims.
-        </p>
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <h1 className="text-2xl md:text-3xl font-extrabold">
+            Admin orders
+          </h1>
+          <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
+            View and manage all customer orders
+          </p>
+        </div>
 
         {/* Not logged in */}
         {!authUser && !loading && (
           <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-2xl p-6 shadow border border-slate-200 dark:border-slate-700 text-center">
             <p className="text-slate-600 dark:text-slate-300 mb-4">
-              Please log in to see your orders.
+              Please log in as admin to view orders.
             </p>
             <button
               onClick={() => navigate("/login")}
@@ -104,10 +132,25 @@ export default function Orders() {
           </div>
         )}
 
-        {/* Loading skeleton */}
-        {authUser && loading && (
+        {/* Not admin */}
+        {authUser && !isAdmin && !loading && (
+          <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-2xl p-6 shadow border border-slate-200 dark:border-slate-700 text-center">
+            <p className="text-slate-600 dark:text-slate-300 mb-2">
+              You are not authorized to view this page.
+            </p>
+            <button
+              onClick={() => navigate("/")}
+              className="mt-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700"
+            >
+              Go to home
+            </button>
+          </div>
+        )}
+
+        {/* Loading */}
+        {authUser && isAdmin && loading && (
           <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div
                 key={i}
                 className="animate-pulse bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 h-28"
@@ -117,17 +160,11 @@ export default function Orders() {
         )}
 
         {/* Orders list */}
-        {authUser && !loading && (
+        {authUser && isAdmin && !loading && (
           <>
             {orders.length === 0 ? (
               <div className="mt-8 text-center text-slate-600 dark:text-slate-300">
-                <p>You don&apos;t have any orders yet.</p>
-                <button
-                  onClick={() => navigate("/course")}
-                  className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm"
-                >
-                  Browse books
-                </button>
+                <p>No orders have been placed yet.</p>
               </div>
             ) : (
               <div className="mt-4 space-y-4">
@@ -136,14 +173,26 @@ export default function Orders() {
                     key={order._id}
                     className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700"
                   >
-                    {/* Order header */}
+                    {/* Header row */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashed border-slate-200 dark:border-slate-700 pb-3 mb-3">
                       <div>
                         <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">
                           Order ID
                         </div>
-                        <div className="text-sm font-mono text-slate-800 dark:text-slate-100">
+                        <div className="text-xs md:text-sm font-mono text-slate-800 dark:text-slate-100">
                           {order._id}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                          Customer
+                        </div>
+                        <div className="text-sm text-slate-700 dark:text-slate-200">
+                          {order.user?.fullname || "Unknown"}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {order.user?.email}
                         </div>
                       </div>
 
@@ -167,14 +216,30 @@ export default function Orders() {
                         </div>
                       </div>
 
-                      <span
-                        className={
-                          "px-3 py-1 rounded-full text-[11px] font-semibold " +
-                          statusBadgeClass(order.status)
-                        }
-                      >
-                        {order.status || "placed"}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={
+                            "px-3 py-1 rounded-full text-[11px] font-semibold " +
+                            statusBadgeClass(order.status)
+                          }
+                        >
+                          {order.status || "placed"}
+                        </span>
+
+                        <select
+                          value={order.status}
+                          onChange={(e) =>
+                            handleStatusChange(order._id, e.target.value)
+                          }
+                          disabled={updatingId === order._id}
+                          className="select select-xs h-7 min-h-[1.75rem] text-[11px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                        >
+                          <option value="placed">placed</option>
+                          <option value="shipped">shipped</option>
+                          <option value="delivered">delivered</option>
+                          <option value="cancelled">cancelled</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* Items */}
@@ -189,7 +254,7 @@ export default function Orders() {
                             key={idx}
                             className="flex gap-3 items-start text-sm"
                           >
-                            <div className="w-14 h-20 rounded-md overflow-hidden flex-shrink-0 bg-slate-50 dark:bg-slate-800">
+                            <div className="w-14 h-18 rounded-md overflow-hidden flex-shrink-0 bg-slate-50 dark:bg-slate-800">
                               <img
                                 src={b.image || FALLBACK_IMAGE}
                                 alt={b.name}
