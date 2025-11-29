@@ -1,20 +1,21 @@
 // Backend/model/payment.model.js
 import mongoose from "mongoose";
 
-const paymentSchema = new mongoose.Schema(
+const { Schema } = mongoose;
+
+const paymentSchema = new Schema(
   {
     user: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
     order: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Order",
-      required: false, // optional: some payments may not be linked to an order in this demo
     },
     amount: {
-      type: Number,
+      type: Number, // in rupees
       required: true,
       min: 0,
     },
@@ -24,20 +25,30 @@ const paymentSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      default: "demo", // razorpay/stripe/etc in real life
+      enum: ["demo", "razorpay"],
+      default: "demo",
     },
     status: {
       type: String,
-      enum: ["pending", "success", "failed", "refunded"],
-      default: "success", // demo: mark as success
+      enum: ["created", "success", "failed"],
+      default: "created",
     },
     reference: {
-      type: String, // e.g. transaction id from gateway
-      trim: true,
+      type: String,
     },
     notes: {
+      type: Schema.Types.Mixed,
+    },
+
+    // Razorpay specific fields
+    razorpayOrderId: {
       type: String,
-      trim: true,
+    },
+    razorpayPaymentId: {
+      type: String,
+    },
+    razorpaySignature: {
+      type: String,
     },
   },
   { timestamps: true }

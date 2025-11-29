@@ -5,23 +5,32 @@ import {
   getMyPayments,
   getAllPayments,
   getPaymentStats,
+  createRazorpayOrder,
+  verifyRazorpayPayment,
 } from "../controller/payment.controller.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// USER
-// POST /payments       -> create a demo payment
+// USER – demo payment
 router.post("/", requireAuth, createPayment);
-
-// GET /payments        -> current user's payments
 router.get("/", requireAuth, getMyPayments);
 
-// ADMIN
-// GET /payments/all    -> all payments across users
+// ADMIN – view payments & stats
 router.get("/all", requireAuth, requireAdmin, getAllPayments);
-
-// GET /payments/stats  -> aggregate stats for dashboard
 router.get("/stats", requireAuth, requireAdmin, getPaymentStats);
+
+// RAZORPAY
+router.post(
+  "/razorpay/create-order",
+  requireAuth,
+  createRazorpayOrder
+);
+
+router.post(
+  "/razorpay/verify",
+  requireAuth,
+  verifyRazorpayPayment
+);
 
 export default router;

@@ -27,6 +27,7 @@ export default function Login() {
   useEffect(() => {
     const dialog = document.getElementById("login_modal");
     if (!dialog) return;
+
     const onShow = () => setTimeout(() => emailRef.current?.focus(), 60);
     dialog.addEventListener("show", onShow);
 
@@ -199,11 +200,13 @@ export default function Login() {
                 </span>
               </label>
 
+              {/* ✅ Real forgot-password navigation */}
               <button
                 type="button"
-                onClick={() =>
-                  toast("Password reset is not configured yet.")
-                }
+                onClick={() => {
+                  closeModal();
+                  navigate("/forgot-password");
+                }}
                 className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
               >
                 Forgot?

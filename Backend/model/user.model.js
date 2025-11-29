@@ -25,10 +25,18 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    // NEW: profile picture URL
+    // profile picture URL
     avatarUrl: {
       type: String,
       default: "",
+    },
+
+    // 🔐 PASSWORD RESET FIELDS
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordExpires: {
+      type: Date,
     },
   },
   { timestamps: true }

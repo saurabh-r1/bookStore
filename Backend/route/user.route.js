@@ -7,12 +7,14 @@ import {
   getProfile,
   updateProfile,
   uploadAvatar,
+  forgotPassword,
+  resetPassword,
 } from "../controller/user.controller.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// Simple multer config – files go into /uploads folder (create it in Backend/)
+// Multer config – files go into /uploads folder
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -37,16 +39,15 @@ const upload = multer({
 router.post("/signup", signup);
 router.post("/login", login);
 
+// Forgot / reset password
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+
 // Profile routes (protected)
 router.get("/me", requireAuth, getProfile);
 router.put("/me", requireAuth, updateProfile);
 
 // Avatar upload (protected)
-router.post(
-  "/avatar",
-  requireAuth,
-  upload.single("avatar"),
-  uploadAvatar
-);
+router.post("/avatar", requireAuth, upload.single("avatar"), uploadAvatar);
 
 export default router;
